@@ -50,3 +50,12 @@ const dateTime = new Intl.DateTimeFormat(navigator.language, {
 })
 
 export const formatDateTime = (iso: string) => dateTime.format(Date.parse(iso))
+
+const wallClock = new Intl.DateTimeFormat(navigator.language, {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: 'UTC',
+})
+
+export const formatOriginalTime = (iso: string) =>
+  `${wallClock.format(Date.parse(`${iso.slice(0, 19)}Z`))} UTC${iso.slice(19)}`

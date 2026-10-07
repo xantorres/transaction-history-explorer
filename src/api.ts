@@ -4,8 +4,9 @@ import {
   keepPreviousData,
   queryOptions,
 } from '@tanstack/react-query'
+import type { InfiniteData } from '@tanstack/react-query'
 import { nextDay, zonedDayStart } from './dates.ts'
-import type { ApiErrorBody, Page, Sort, Summary } from './domain.ts'
+import type { ApiErrorBody, Page, Sort, Summary, Transaction } from './domain.ts'
 import type { View } from './url-state.ts'
 
 export class ApiError extends Error {
@@ -66,6 +67,19 @@ export const summaryQuery = (filters: Filters) =>
     queryFn: ({ signal }) =>
       getJson(`/api/summary?${toQuery(filters)}`, signal) as Promise<Summary>,
     placeholderData: keepPreviousData,
+  })
+
+export const transactionQuery = (id: string, client: QueryClient) =>
+  queryOptions<Transaction>({
+    queryKey: ['transaction', id],
+    queryFn: ({ signal }) =>
+      getJson(`/api/transactions/${encodeURIComponent(id)}`, signal) as Promise<Transaction>,
+    placeholderData: () =>
+      client
+        .getQueriesData<InfiniteData<Page>>({ queryKey: ['transactions'] })
+        .flatMap(([, data]) => data?.pages ?? [])
+        .flatMap((page) => page.items)
+        .find((row) => row.id === id),
   })
 
 export const createQueryClient = () =>

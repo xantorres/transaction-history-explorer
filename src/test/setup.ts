@@ -6,6 +6,14 @@ Object.defineProperties(HTMLElement.prototype, {
   offsetWidth: { get: () => 1200 },
 })
 
+// jsdom has no modal dialogs yet.
+HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
+  this.open = true
+}
+HTMLDialogElement.prototype.close = function (this: HTMLDialogElement) {
+  this.open = false
+}
+
 afterEach(() => {
   cleanup()
   history.replaceState(null, '', '/')

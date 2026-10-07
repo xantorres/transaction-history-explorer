@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 import {
   canonicalZone,
   formatDateTime,
+  formatOriginalTime,
   isIsoDate,
   nextDay,
   zonedDayStart,
@@ -70,4 +71,11 @@ test('formatDateTime shows the instant in the viewer zone', () => {
   expect(formatDateTime('2026-10-01T00:55:28+01:00').replace(/\s/g, ' ')).toBe(
     'Sep 30, 2026, 7:55 PM',
   )
+})
+
+test('formatOriginalTime keeps the wall clock and offset it was recorded with', () => {
+  const format = (iso: string) => formatOriginalTime(iso).replace(/\s/g, ' ')
+  expect(format('2026-10-01T00:55:28+01:00')).toBe('Oct 1, 2026, 12:55 AM UTC+01:00')
+  expect(format('2026-03-08T23:10:00-04:00')).toBe('Mar 8, 2026, 11:10 PM UTC-04:00')
+  expect(format('2026-01-01T09:00:00+05:30')).toBe('Jan 1, 2026, 9:00 AM UTC+05:30')
 })

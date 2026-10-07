@@ -5,7 +5,7 @@ import { transactionsQuery, type Filters } from '../api.ts'
 import { formatDateTime } from '../dates.ts'
 import type { Sort, Transaction } from '../domain.ts'
 import { formatMoney } from '../money.ts'
-import { encodeView, updateView, type View } from '../url-state.ts'
+import { encodeView, openTransaction, type View, updateView } from '../url-state.ts'
 import { StatusBadge } from './StatusBadge.tsx'
 
 export const ROW_HEIGHT = 44
@@ -157,7 +157,16 @@ function TransactionRow({ row, rowIndex, view, style }: TransactionRowProps) {
         <time dateTime={row.timestamp}>{formatDateTime(row.timestamp)}</time>
       </div>
       <div role="cell">
-        <a href={encodeView({ ...view, tx: row.id })}>{row.counterparty}</a>
+        <a
+          href={encodeView({ ...view, tx: row.id })}
+          onClick={(event) => {
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+            event.preventDefault()
+            openTransaction(row.id)
+          }}
+        >
+          {row.counterparty}
+        </a>
       </div>
       <div role="cell" data-column="description">
         {row.description}

@@ -109,7 +109,9 @@ button:disabled {
   gap: 4px;
 }
 
-.field > span {
+.field > span,
+.stat dt,
+.facts dt {
   color: var(--muted);
   font-size: 0.75rem;
   font-weight: 600;
@@ -189,12 +191,7 @@ button:disabled {
 }
 
 .stat dt {
-  color: var(--muted);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
   line-height: 1.6;
-  text-transform: uppercase;
 }
 
 .stat dd {
@@ -461,6 +458,135 @@ button:disabled {
   50% {
     opacity: 0.45;
   }
+}
+
+.drawer {
+  inset: 0 0 0 auto;
+  width: min(28rem, 100%);
+  max-width: none;
+  height: auto;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.drawer[open] {
+  animation: slide-in 0.2s ease-out;
+}
+
+.drawer::backdrop {
+  background: rgb(0 0 0 / 0.35);
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+.drawer-body {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 16px;
+  height: 100%;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.drawer-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  align-self: stretch;
+}
+
+.drawer-head h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.close {
+  flex: none;
+  width: 34px;
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.drawer-amount {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.drawer-body[data-status='PENDING'] .drawer-amount {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.drawer-body[data-status='REVERSED'] .drawer-amount {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.note {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--pending);
+  border-radius: 4px;
+  background: var(--hover);
+}
+
+.drawer-body[data-status='REVERSED'] .note {
+  border-color: var(--negative);
+}
+
+.facts {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+
+.facts div {
+  display: grid;
+  gap: 2px;
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.drawer-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  color: var(--muted);
+}
+
+.drawer-skeleton {
+  display: grid;
+  gap: 16px;
+  align-self: stretch;
+}
+
+.drawer-skeleton span {
+  width: 60%;
+}
+
+.drawer-skeleton span:first-child {
+  width: 40%;
+  height: 24px;
 }
 
 @media (width < 1000px) {

@@ -114,6 +114,16 @@ export function updateView(
   navigate(encodeView(decodeView(params.toString(), viewerZone)), mode, state)
 }
 
+export const openTransaction = (tx: string) => {
+  updateView({ tx }, 'push', { drawer: true })
+}
+
+export function closeTransaction() {
+  // Only a drawer opened from a row owns the entry below; Back on a shared link would leave the app.
+  if ((history.state as { drawer?: boolean } | null)?.drawer) history.back()
+  else updateView({ tx: '' }, 'replace')
+}
+
 export const canonicalizeUrl = () => {
   navigate(encodeView(decodeView(location.search, viewerZone)), 'replace')
 }
