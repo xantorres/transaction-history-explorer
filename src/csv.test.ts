@@ -13,6 +13,10 @@ test.each([
     '=HYPERLINK("https://example.com/refund","Claim refund")',
     `"'=HYPERLINK(""https://example.com/refund"",""Claim refund"")"`,
   ],
+  ['Acme;=1+2;', "Acme;'=1+2;"],
+  ['Acme\t@SUM(A1:A9)', "Acme\t'@SUM(A1:A9)"],
+  ['Acme\n-2+3', `"Acme\n'-2+3"`],
+  ['\t=1+2', "'\t'=1+2"],
 ])('neutralises a formula in %j', (value, cell) => {
   expect(csvCell(value)).toBe(cell)
 })

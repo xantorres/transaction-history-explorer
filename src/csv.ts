@@ -1,13 +1,14 @@
 import type { Transaction } from './domain.ts'
 import { toDecimal } from './money.ts'
 
-const FORMULA = /^[=+\-@\t\r]/
+const FORMULA = /(?<=^|[;\t\r\n])(?=[=+\-@\t\r])/g
 const NUMBER = /^-?\d+(\.\d+)?$/
 const NEEDS_QUOTES = /[",\r\n]/
 
 export function csvCell(value: string) {
-  // Spreadsheets run a cell that starts like a formula; the quote makes it text.
-  const safe = FORMULA.test(value) && !NUMBER.test(value) ? `'${value}` : value
+  // Spreadsheets run a cell that starts like a formula, and locales that split cells on ; also
+  // start one after a ;, tab or line break, even inside quotes. The apostrophe makes it text.
+  const safe = NUMBER.test(value) ? value : value.replace(FORMULA, "'")
   return NEEDS_QUOTES.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe
 }
 
