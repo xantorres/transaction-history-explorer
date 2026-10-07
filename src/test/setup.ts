@@ -9,4 +9,5 @@ Object.defineProperties(HTMLElement.prototype, {
 afterEach(() => {
   cleanup()
   history.replaceState(null, '', '/')
+  document.cookie = 'faults=; max-age=0'
 })

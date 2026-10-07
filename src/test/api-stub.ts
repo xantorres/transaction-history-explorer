@@ -22,7 +22,10 @@ export function installApi() {
   const holds: { matches: (url: URL) => boolean; released: Promise<void> }[] = []
 
   vi.stubGlobal('fetch', async (path: string, init?: RequestInit) => {
-    const request = new Request(new URL(path, location.origin), init)
+    const request = new Request(new URL(path, location.origin), {
+      ...init,
+      headers: { cookie: document.cookie },
+    })
     const url = new URL(request.url)
     requests.push({ url, signal: request.signal })
     const hold = holds.find(({ matches }) => matches(url))

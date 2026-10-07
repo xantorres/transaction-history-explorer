@@ -6,8 +6,10 @@ import { createQueryClient } from '../api.ts'
 
 export function renderApp(search = '') {
   history.replaceState(null, '', `/${search}`)
+  const client = createQueryClient()
+  client.setDefaultOptions({ queries: { ...client.getDefaultOptions().queries, retryDelay: 0 } })
   return render(
-    <QueryClientProvider client={createQueryClient()}>
+    <QueryClientProvider client={client}>
       <App />
     </QueryClientProvider>,
   )
