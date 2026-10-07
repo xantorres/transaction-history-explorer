@@ -3,7 +3,7 @@ import type { ChangeEvent } from 'react'
 import { viewerZone } from '../dates.ts'
 import { CATEGORIES, CURRENCIES, STATUS_LABELS, STATUSES } from '../domain.ts'
 import { DECIMAL } from '../money.ts'
-import { encodeView, navigate, updateView } from '../url-state.ts'
+import { clearFilters, updateView } from '../url-state.ts'
 import type { View } from '../url-state.ts'
 import { DebouncedInput } from './DebouncedInput.tsx'
 
@@ -97,7 +97,7 @@ export function FilterBar({ view }: { view: View }) {
         type="button"
         disabled={!q && collapsed === 0}
         onClick={() => {
-          navigate(encodeView({ tz: view.tz, sort: view.sort }), 'push')
+          clearFilters(view)
         }}
       >
         Clear filters

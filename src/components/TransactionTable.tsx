@@ -1,11 +1,11 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useEffect, useMemo, useRef, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react'
 import { transactionsQuery, type Filters } from '../api.ts'
 import { formatDateTime } from '../dates.ts'
 import type { Sort, Transaction } from '../domain.ts'
 import { formatMoney } from '../money.ts'
-import { encodeView, openTransaction, type View, updateView } from '../url-state.ts'
+import { clearFilters, encodeView, openTransaction, type View, updateView } from '../url-state.ts'
 import { StatusBadge } from './StatusBadge.tsx'
 
 export const ROW_HEIGHT = 44
@@ -23,12 +23,14 @@ export function TransactionTable({ view, filters, total }: TransactionTableProps
   const {
     data,
     isPending,
+    isError,
     isFetching,
     isFetchingNextPage,
     isPlaceholderData,
     hasNextPage,
     isFetchNextPageError,
     fetchNextPage,
+    refetch,
   } = useInfiniteQuery(transactionsQuery(filters, view.sort))
   const rows = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data])
 
@@ -103,13 +105,47 @@ export function TransactionTable({ view, filters, total }: TransactionTableProps
             ) : (
               <div key="more" role="row" aria-rowindex={index + 2} className="row" style={style}>
                 <div role="cell" className="more">
-                  Loading more…
+                  {isFetchNextPageError ? (
+                    <>
+                      Couldn't load more.
+                      <button
+                        type="button"
+                        disabled={isFetchingNextPage}
+                        onClick={() => void fetchNextPage()}
+                      >
+                        Retry
+                      </button>
+                    </>
+                  ) : (
+                    'Loading more…'
+                  )}
                 </div>
               </div>
             )
           })}
         </div>
         {isPending && <Skeleton />}
+        {isError && !data && (
+          <Notice>
+            Couldn't load transactions.
+            <button type="button" disabled={isFetching} onClick={() => void refetch()}>
+              Retry
+            </button>
+          </Notice>
+        )}
+        {data && rows.length === 0 && (
+          <Notice>
+            No transactions match these filters.
+            <button
+              type="button"
+              onClick={() => {
+                clearFilters(view)
+              }}
+            >
+              Clear filters
+            </button>
+          </Notice>
+        )}
       </div>
     </div>
   )
@@ -180,6 +216,14 @@ function TransactionRow({ row, rowIndex, view, style }: TransactionRowProps) {
       <div role="cell" data-column="amount" data-direction={row.amount > 0 ? 'in' : 'out'}>
         {formatMoney(row.amount, row.currency)}
       </div>
+    </div>
+  )
+}
+
+function Notice({ children }: { children: ReactNode }) {
+  return (
+    <div role="row" className="notice">
+      <div role="cell">{children}</div>
     </div>
   )
 }

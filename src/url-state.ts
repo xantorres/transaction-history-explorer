@@ -114,6 +114,10 @@ export function updateView(
   navigate(encodeView(decodeView(params.toString(), viewerZone)), mode, state)
 }
 
+export const clearFilters = ({ tz, sort }: View) => {
+  navigate(encodeView({ tz, sort }), 'push')
+}
+
 export const openTransaction = (tx: string) => {
   updateView({ tx }, 'push', { drawer: true })
 }
