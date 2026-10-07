@@ -36,7 +36,23 @@ type Key = 'date' | 'amount'
 
 const FACE_DIGITS = Math.max(...CURRENCIES.map(minorDigits))
 
-const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('en')
+// Letters with no decomposition, so stripping combining marks never reaches them.
+const LETTERS: Partial<Record<string, string>> = {
+  ß: 'ss',
+  æ: 'ae',
+  đ: 'd',
+  ı: 'i',
+  ł: 'l',
+  œ: 'oe',
+  ø: 'o',
+}
+
+const fold = (text: string) =>
+  text
+    .toLocaleLowerCase('en')
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/[ßæđıłœø]/g, (letter) => LETTERS[letter] ?? letter)
 
 const compareIds = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
 

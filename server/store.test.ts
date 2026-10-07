@@ -104,6 +104,21 @@ describe('list', () => {
     expect(search('cafe')).toEqual([rows[1]?.id, rows[2]?.id])
   })
 
+  test('folds letters that have no accent to strip', () => {
+    const rows = [
+      tx({ counterparty: 'Łukasz Nowak' }),
+      tx({ counterparty: 'Ørsted Energi A/S' }),
+      tx({ description: 'Straßenbahn monthly pass' }),
+    ]
+    const search = (q: string) =>
+      createStore(rows)
+        .list({ q }, 'date', null, 10)
+        .items.map((item) => item.id)
+    expect(search('lukasz')).toEqual([rows[0]?.id])
+    expect(search('orsted')).toEqual([rows[1]?.id])
+    expect(search('strassen')).toEqual([rows[2]?.id])
+  })
+
   test('pages through ties without duplicates or gaps in both directions', () => {
     const rows = Array.from({ length: 23 }, (_, index) =>
       tx({ amount: index % 4 === 0 ? 5000 : -1000, currency: index % 3 ? 'EUR' : 'JPY' }),
