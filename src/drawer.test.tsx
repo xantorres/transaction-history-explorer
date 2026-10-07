@@ -129,39 +129,42 @@ test('closing twice before Back lands steps back once', async () => {
   expect(location.search).toBe('')
 })
 
-test('modified clicks keep the browser new-tab behaviour', async () => {
-  installApi()
-  renderApp()
-  await waitForRows()
-  let prevented: boolean | undefined
-  window.addEventListener(
-    'click',
-    (event) => {
-      prevented = event.defaultPrevented
-      event.preventDefault()
-    },
-    { once: true },
-  )
-  fireEvent.click(within(rowAt(2) as HTMLElement).getByRole('link'), { metaKey: true })
-  expect(prevented).toBe(false)
-  expect(location.search).toBe('')
-})
+test.each(['metaKey', 'ctrlKey', 'shiftKey', 'altKey'])(
+  'a click with %s keeps the browser new-tab behaviour',
+  async (modifier) => {
+    installApi()
+    renderApp()
+    await waitForRows()
+    let prevented: boolean | undefined
+    window.addEventListener(
+      'click',
+      (event) => {
+        prevented = event.defaultPrevented
+        event.preventDefault()
+      },
+      { once: true },
+    )
+    fireEvent.click(within(rowAt(2) as HTMLElement).getByRole('link'), { [modifier]: true })
+    expect(prevented).toBe(false)
+    expect(location.search).toBe('')
+  },
+)
 
 test.each(['tx_00000000', 'summary'])('?tx=%s says the transaction was not found', async (id) => {
-  installApi()
+  const api = installApi()
   renderApp(`?tx=${id}`)
   await waitFor(() => {
     expect(drawerFor('Transaction not found')).toBeDefined()
   })
+  const detail = api.requests.filter(({ url }) => url.pathname === `/api/transactions/${id}`)
+  expect(detail).toHaveLength(1)
 })
 
 test('a failed detail request can be retried', async () => {
   installApi()
   document.cookie = 'faults=detail'
   renderApp(`?tx=${String(unloaded?.id)}`)
-  await waitFor(() => {
-    expect(within(drawer()).getByText("Couldn't load this transaction.")).toBeDefined()
-  })
+  await within(drawer()).findByText("Couldn't load this transaction.")
   document.cookie = 'faults=; max-age=0'
   fireEvent.click(within(drawer()).getByRole('button', { name: 'Retry' }))
   await waitFor(() => {

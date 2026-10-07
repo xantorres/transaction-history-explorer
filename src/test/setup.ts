@@ -1,9 +1,8 @@
 import { cleanup } from '@testing-library/react'
-import { afterEach } from 'vitest'
+import { afterEach, vi } from 'vitest'
 
 Object.defineProperties(HTMLElement.prototype, {
   offsetHeight: { get: () => 800 },
-  offsetWidth: { get: () => 1200 },
 })
 
 // jsdom has no modal dialogs yet.
@@ -16,6 +15,7 @@ HTMLDialogElement.prototype.close = function (this: HTMLDialogElement) {
 
 afterEach(() => {
   cleanup()
-  history.replaceState(null, '', '/')
+  vi.useRealTimers()
+  history.pushState(null, '', '/')
   document.cookie = 'faults=; max-age=0'
 })

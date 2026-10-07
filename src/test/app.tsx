@@ -21,7 +21,7 @@ export const dataRows = () =>
 export const rowAt = (rowIndex: number) =>
   screen.getAllByRole('row').find((row) => row.getAttribute('aria-rowindex') === String(rowIndex))
 
-export const hrefAt = (rowIndex: number) => {
+export function hrefAt(rowIndex: number) {
   const row = rowAt(rowIndex)
   return row && within(row).getByRole('link').getAttribute('href')
 }

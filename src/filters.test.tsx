@@ -1,10 +1,16 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { installApi, store } from './test/api-stub.ts'
 import { field, fill, hrefAt, renderApp, waitForRows } from './test/app.tsx'
 
 const firstId = (filters: Parameters<typeof store.list>[0]) =>
   store.list(filters, '-date', null, 100).items[0]?.id
+
+const advance = (ms: number) => {
+  act(() => {
+    vi.advanceTimersByTime(ms)
+  })
+}
 
 test('fills every filter control from the URL', () => {
   installApi()
@@ -22,22 +28,22 @@ test('fills every filter control from the URL', () => {
   expect(screen.getByRole('note').textContent).toContain('Asia/Tokyo')
 })
 
-test('debounces typing into one history entry per burst', async () => {
+test('debounces typing into one history entry per burst', () => {
   installApi()
   renderApp()
   const entries = history.length
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   fireEvent.focus(field('Search'))
   for (const value of ['k', 'ke', 'kes', 'kest']) {
     fireEvent.change(field('Search'), { target: { value } })
   }
+  advance(299)
   expect(location.search).toBe('')
-  await waitFor(() => {
-    expect(location.search).toBe('?q=kest')
-  })
+  advance(1)
+  expect(location.search).toBe('?q=kest')
   fireEvent.change(field('Search'), { target: { value: 'kestrel ' } })
-  await waitFor(() => {
-    expect(location.search).toBe('?q=kestrel')
-  })
+  advance(300)
+  expect(location.search).toBe('?q=kestrel')
   expect(history.length).toBe(entries + 1)
   expect(field('Search').value).toBe('kestrel ')
 })
@@ -76,11 +82,12 @@ test('back and forward restore the filters and their rows', async () => {
 
 test('typing after Back keeps the entry Back returned to', async () => {
   installApi()
-  renderApp()
+  renderApp('?status=BOOKED')
+  fireEvent.change(field('Currency'), { target: { value: 'EUR' } })
   fireEvent.focus(field('Search'))
   fireEvent.change(field('Search'), { target: { value: 'kestrel' } })
   await waitFor(() => {
-    expect(location.search).toBe('?q=kestrel')
+    expect(location.search).toBe('?q=kestrel&currency=EUR&status=BOOKED')
   })
 
   act(() => {
@@ -91,22 +98,44 @@ test('typing after Back keeps the entry Back returned to', async () => {
   })
   fireEvent.change(field('Search'), { target: { value: 'aegean' } })
   await waitFor(() => {
-    expect(location.search).toBe('?q=aegean')
+    expect(location.search).toBe('?q=aegean&currency=EUR&status=BOOKED')
   })
 
   act(() => {
     history.back()
   })
   await waitFor(() => {
-    expect(location.search).toBe('')
+    expect(location.search).toBe('?currency=EUR&status=BOOKED')
   })
 })
 
-test('a slow earlier search never replaces a newer one', async () => {
+test('refocusing a field starts a new history entry', () => {
+  installApi()
+  renderApp()
+  const entries = history.length
+  fireEvent.focus(field('Search'))
+  fill('Search', 'kestrel')
+  fireEvent.focus(field('Search'))
+  fill('Search', 'aegean')
+  expect(history.length).toBe(entries + 2)
+})
+
+test('Clear filters drops a search still being typed', () => {
+  installApi()
+  renderApp('?q=kestrel')
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  fireEvent.change(field('Search'), { target: { value: 'kestrel ae' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+  advance(300)
+  expect(location.search).toBe('')
+  expect(field('Search').value).toBe('')
+})
+
+test('abandons the request of a superseded search', async () => {
   const api = installApi()
   const isSlow = (url: URL) =>
     url.pathname === '/api/transactions' && url.searchParams.get('q') === 'aegean'
-  const release = api.hold(isSlow)
+  api.hold(isSlow)
   renderApp()
   await waitForRows()
   fill('Search', 'aegean')
@@ -114,13 +143,46 @@ test('a slow earlier search never replaces a newer one', async () => {
     expect(api.requests.some(({ url }) => isSlow(url))).toBe(true)
   })
   fill('Search', 'kestrel')
+  await waitFor(() => {
+    expect(hrefAt(2)).toBe(`?q=kestrel&tx=${String(firstId({ q: 'kestrel' }))}`)
+  })
+  expect(api.requests.find(({ url }) => isSlow(url))?.signal.aborted).toBe(true)
+})
+
+test('a slow earlier search never replaces a newer one', async () => {
+  installApi()
+  const stubbed = fetch
+  let release = () => {}
+  const late = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  let stale: Promise<Response> | undefined
+  // Without init the superseded request ignores its abort signal and answers after the newer rows.
+  vi.stubGlobal('fetch', (path: string, init?: RequestInit) => {
+    const { pathname, searchParams } = new URL(path, location.origin)
+    if (pathname !== '/api/transactions' || searchParams.get('q') !== 'aegean') {
+      return stubbed(path, init)
+    }
+    stale = late.then(() => stubbed(path))
+    return stale
+  })
+  renderApp()
+  await waitForRows()
+  fill('Search', 'aegean')
+  await waitFor(() => {
+    expect(stale).toBeDefined()
+  })
+  fill('Search', 'kestrel')
   const newer = `?q=kestrel&tx=${String(firstId({ q: 'kestrel' }))}`
   await waitFor(() => {
     expect(hrefAt(2)).toBe(newer)
   })
-  expect(api.requests.find(({ url }) => isSlow(url))?.signal.aborted).toBe(true)
   release()
-  await new Promise((resolve) => setTimeout(resolve, 50))
+  await act(async () => {
+    await stale
+    await new Promise((resolve) => setTimeout(resolve, 50))
+  })
+  expect((await stale)?.bodyUsed).toBe(true)
   expect(hrefAt(2)).toBe(newer)
 })
 
@@ -163,7 +225,7 @@ test('garbage in an amount keeps the bound already applied', () => {
   expect(field('Min amount').getAttribute('aria-invalid')).toBe('true')
 })
 
-test('clearing filters keeps the sort order', () => {
+test('clearing filters keeps the sort order and Back restores the filters', async () => {
   installApi()
   renderApp('?q=kestrel&currency=EUR&sort=amount')
   fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
@@ -173,4 +235,11 @@ test('clearing filters keeps the sort order', () => {
   expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Clear filters' }).disabled).toBe(
     true,
   )
+
+  act(() => {
+    history.back()
+  })
+  await waitFor(() => {
+    expect(location.search).toBe('?q=kestrel&currency=EUR&sort=amount')
+  })
 })

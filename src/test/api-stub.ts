@@ -16,8 +16,8 @@ const aborted = (signal: AbortSignal) =>
     )
   })
 
-export function installApi(rows = store) {
-  const handle = createApi({ store: rows, latency: () => 0, simulateFaults: true })
+export function installApi(source = store) {
+  const handle = createApi({ store: source, latency: () => 0, simulateFaults: true })
   const requests: { url: URL; signal: AbortSignal }[] = []
   const holds: { matches: (url: URL) => boolean; released: Promise<void> }[] = []
 
