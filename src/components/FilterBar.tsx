@@ -17,6 +17,7 @@ function parseAmount(draft: string) {
 export function FilterBar({ view }: { view: View }) {
   const [open, setOpen] = useState(false)
   const clears = useClears()
+  const [chosen, setChosen] = useState<{ param: string; value: string }>()
   const { q, from, to, min, max, currency, status, category } = view
   const filterCount = [from, to, min, max, currency, status, category].filter(Boolean).length
   const datesInverted = from !== undefined && to !== undefined && from > to
@@ -28,10 +29,17 @@ export function FilterBar({ view }: { view: View }) {
       updateView({ [param]: value }, mode)
     },
   })
+  // Like typing, one visit to a select is one step back, unless history moved since its last pick.
   const choice = (param: 'currency' | 'status' | 'category') => ({
     value: view[param] ?? '',
+    onFocus: () => {
+      setChosen(undefined)
+    },
     onChange: (event: ChangeEvent<HTMLSelectElement>) => {
-      updateView({ [param]: event.target.value }, 'push')
+      const { value } = event.target
+      const repeat = chosen?.param === param && chosen.value === (view[param] ?? '')
+      updateView({ [param]: value }, repeat ? 'replace' : 'push')
+      setChosen({ param, value })
     },
   })
 

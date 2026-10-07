@@ -125,6 +125,47 @@ test('refocusing a field starts a new history entry', () => {
   expect(history.length).toBe(entries + 2)
 })
 
+test('one visit to a select is one history entry, and Back starts another', async () => {
+  installApi()
+  renderApp('?status=BOOKED')
+  const entries = history.length
+  fireEvent.focus(field('Currency'))
+  for (const value of ['EUR', 'GBP', 'USD']) {
+    fireEvent.change(field('Currency'), { target: { value } })
+  }
+  expect(location.search).toBe('?currency=USD&status=BOOKED')
+  expect(history.length).toBe(entries + 1)
+
+  act(() => {
+    history.back()
+  })
+  await waitFor(() => {
+    expect(location.search).toBe('?status=BOOKED')
+  })
+  fireEvent.change(field('Currency'), { target: { value: 'JPY' } })
+  act(() => {
+    history.back()
+  })
+  await waitFor(() => {
+    expect(location.search).toBe('?status=BOOKED')
+  })
+})
+
+test('waits for an IME composition to end before searching', () => {
+  installApi()
+  renderApp()
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  fireEvent.compositionStart(field('Search'))
+  fireEvent.change(field('Search'), { target: { value: 'とうきょう' } })
+  fireEvent.keyDown(field('Search'), { key: 'Enter' })
+  advance(300)
+  expect(location.search).toBe('')
+  fireEvent.change(field('Search'), { target: { value: '東京' } })
+  fireEvent.compositionEnd(field('Search'))
+  advance(300)
+  expect(location.search).toBe(`?${new URLSearchParams({ q: '東京' }).toString()}`)
+})
+
 test('Clear filters drops a search still being typed', () => {
   installApi()
   renderApp('?q=kestrel')

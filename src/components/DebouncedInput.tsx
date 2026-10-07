@@ -33,6 +33,7 @@ export function DebouncedInput({
   const input = useRef<HTMLInputElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const committed = useRef<string>(undefined)
+  const composing = useRef(false)
   const id = useId()
 
   const invalid = (text: string) => text.trim() !== '' && parse(text) === ''
@@ -52,6 +53,13 @@ export function DebouncedInput({
       clearTimeout(timer.current)
     }
   }, [value])
+
+  function schedule(next: string) {
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => {
+      commit(next)
+    }, DEBOUNCE_MS)
+  }
 
   function commit(next: string) {
     clearTimeout(timer.current)
@@ -81,16 +89,21 @@ export function DebouncedInput({
           const next = event.target.value
           setDraft(next)
           setIncomplete(event.target.validity.badInput)
-          clearTimeout(timer.current)
-          timer.current = setTimeout(() => {
-            commit(next)
-          }, DEBOUNCE_MS)
+          if (composing.current) clearTimeout(timer.current)
+          else schedule(next)
+        }}
+        onCompositionStart={() => {
+          composing.current = true
+        }}
+        onCompositionEnd={(event) => {
+          composing.current = false
+          schedule(event.currentTarget.value)
         }}
         onBlur={() => {
           commit(draft)
         }}
         onKeyDown={(event) => {
-          if (event.key === 'Enter') commit(draft)
+          if (event.key === 'Enter' && !composing.current) commit(draft)
         }}
       />
       {message && (
