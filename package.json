@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright install chromium && playwright test",
     "lint": "eslint . && prettier --check . && tsc -b",
     "format": "prettier --write ."
   },
