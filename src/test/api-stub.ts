@@ -18,13 +18,13 @@ const aborted = (signal: AbortSignal) =>
 
 export function installApi() {
   const handle = createApi({ store, latency: () => 0 })
-  const requests: URL[] = []
+  const requests: { url: URL; signal: AbortSignal }[] = []
   const holds: { matches: (url: URL) => boolean; released: Promise<void> }[] = []
 
   vi.stubGlobal('fetch', async (path: string, init?: RequestInit) => {
     const request = new Request(new URL(path, location.origin), init)
     const url = new URL(request.url)
-    requests.push(url)
+    requests.push({ url, signal: request.signal })
     const hold = holds.find(({ matches }) => matches(url))
     if (hold) await Promise.race([hold.released, aborted(request.signal)])
     return handle(request)

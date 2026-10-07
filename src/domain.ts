@@ -3,6 +3,11 @@ export type Currency = (typeof CURRENCIES)[number]
 
 export const STATUSES = ['PENDING', 'BOOKED', 'REVERSED'] as const
 export type Status = (typeof STATUSES)[number]
+export const STATUS_LABELS: Record<Status, string> = {
+  PENDING: 'Pending',
+  BOOKED: 'Booked',
+  REVERSED: 'Reversed',
+}
 
 export const CATEGORIES = [
   'Fees',

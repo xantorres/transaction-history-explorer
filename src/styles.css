@@ -83,6 +83,76 @@ select {
   gap: 12px;
 }
 
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px 12px;
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+}
+
+.field > span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.field:has([type='search']) {
+  flex: 1 1 14rem;
+}
+
+.field:has([type='date']) {
+  width: 9.5rem;
+}
+
+.field:has([inputmode='decimal']) {
+  width: 7rem;
+}
+
+.filters input,
+.filters select,
+.filters button {
+  height: 34px;
+  padding-inline: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.filters input {
+  width: 100%;
+}
+
+.filters button {
+  cursor: pointer;
+}
+
+.filters button:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+.filters [aria-invalid='true'] {
+  border-color: var(--negative);
+}
+
+.filters-toggle {
+  display: none;
+}
+
+.zone-note {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
 .table {
   --columns: 10.5rem minmax(0, 1.3fr) minmax(0, 2fr) 6.5rem 6.5rem 9rem;
   position: relative;
@@ -318,6 +388,27 @@ select {
 
   .table {
     --columns: 5.5rem minmax(0, 1fr) 14px 6.5rem;
+  }
+
+  .filters {
+    gap: 8px;
+  }
+
+  .filters-toggle {
+    display: block;
+  }
+
+  .filters:not([data-open]) > :not(:first-child, .filters-toggle) {
+    display: none;
+  }
+
+  .filters > :is(.field:not(:first-child), button:not(.filters-toggle)) {
+    flex: 1 1 40%;
+    width: auto;
+  }
+
+  .filters select {
+    width: 100%;
   }
 
   .row {
