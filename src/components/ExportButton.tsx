@@ -47,20 +47,17 @@ export function ExportButton({ filters, sort, total }: ExportButtonProps) {
   return (
     <div className="export">
       <span role="status">{job ? describe(job) : failed && "Couldn't export. Try again."}</span>
-      {job ? (
-        <button
-          type="button"
-          onClick={() => {
-            job.controller.abort()
-          }}
-        >
-          Cancel
-        </button>
-      ) : (
-        <button type="button" onClick={() => void start()}>
-          Export CSV
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={(event) => {
+          // A double click's second click lands on whatever its first click put here.
+          if (event.detail > 1) return
+          if (job) job.controller.abort()
+          else void start()
+        }}
+      >
+        {job ? 'Cancel' : 'Export CSV'}
+      </button>
     </div>
   )
 }

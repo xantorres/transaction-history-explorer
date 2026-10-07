@@ -112,6 +112,27 @@ test('cancelling stops the export without a download or an error', async () => {
   expect(progress()).toBe('')
 })
 
+test('a double click exports instead of cancelling itself', async () => {
+  installApi(store)
+  const files = captureDownloads()
+  renderApp('?status=BOOKED')
+
+  fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }), { detail: 1 })
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }), { detail: 2 })
+  await waitFor(() => {
+    expect(files).toHaveLength(1)
+  })
+})
+
+test('the second click of a double click never starts an export', () => {
+  const api = installApi(store)
+  renderApp()
+
+  fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }), { detail: 2 })
+  expect(screen.getByRole('button', { name: 'Export CSV' })).toBeDefined()
+  expect(api.requests.some(({ url }) => isChunk(url))).toBe(false)
+})
+
 test('a failed chunk ends the export with a message and can be retried', async () => {
   installApi(store)
   const files = captureDownloads()
