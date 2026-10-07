@@ -89,7 +89,7 @@ type Endpoint = 'list' | 'page' | 'summary' | 'detail'
 
 function endpointOf({ pathname, searchParams }: URL): Endpoint | undefined {
   if (pathname === PREFIX) return searchParams.has('cursor') ? 'page' : 'list'
-  if (pathname === `${PREFIX}/summary`) return 'summary'
+  if (pathname === '/api/summary') return 'summary'
   if (/^\/api\/transactions\/[^/]+$/.test(pathname)) return 'detail'
   return undefined
 }

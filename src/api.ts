@@ -64,7 +64,7 @@ export const summaryQuery = (filters: Filters) =>
   queryOptions({
     queryKey: ['summary', filters],
     queryFn: ({ signal }) =>
-      getJson(`/api/transactions/summary?${toQuery(filters)}`, signal) as Promise<Summary>,
+      getJson(`/api/summary?${toQuery(filters)}`, signal) as Promise<Summary>,
     placeholderData: keepPreviousData,
   })
 

@@ -58,8 +58,8 @@ describe('GET /api/transactions', () => {
   })
 })
 
-test('GET /api/transactions/summary totals the filtered result', async () => {
-  const summary = (await read('/api/transactions/summary?currency=JPY')) as Summary
+test('GET /api/summary totals the filtered result', async () => {
+  const summary = (await read('/api/summary?currency=JPY')) as Summary
   expect(summary.count).toBe(rows.filter((row) => row.currency === 'JPY').length)
   expect(summary.perCurrency.map((total) => total.currency)).toEqual(['JPY'])
 })
@@ -85,7 +85,7 @@ test('fails the endpoints named in the faults cookie', async () => {
     headers,
   })
   expect(next.status).toBe(500)
-  expect((await get('/api/transactions/summary', { headers })).status).toBe(500)
+  expect((await get('/api/summary', { headers })).status).toBe(500)
   expect((await get(`/api/transactions/${String(rows[0]?.id)}`, { headers })).status).toBe(200)
 })
 
