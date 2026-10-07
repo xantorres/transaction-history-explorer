@@ -3,7 +3,7 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 import reactHooks from 'eslint-plugin-react-hooks'
 import tseslint from 'typescript-eslint'
 
-export default defineConfig(globalIgnores(['dist', 'playwright-report', 'test-results']), {
+export default defineConfig(globalIgnores(['dist']), {
   files: ['**/*.{ts,tsx}'],
   extends: [
     js.configs.recommended,

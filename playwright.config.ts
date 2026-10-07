@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: 'e2e',
@@ -10,7 +10,6 @@ export default defineConfig({
     timezoneId: 'America/New_York',
     trace: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: devices['Desktop Chrome'] }],
   webServer: {
     command: 'npm run build && npm run preview -- --strictPort',
     url: 'http://localhost:4173',
