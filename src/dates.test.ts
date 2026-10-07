@@ -50,6 +50,7 @@ test('nextDay crosses months, years and leap days', () => {
   expect(nextDay('2026-01-31')).toBe('2026-02-01')
   expect(nextDay('2026-12-31')).toBe('2027-01-01')
   expect(nextDay('2028-02-28')).toBe('2028-02-29')
+  expect(nextDay('9999-12-31')).toBe('+010000-01-01')
 })
 
 test('isIsoDate accepts real calendar days only', () => {

@@ -33,6 +33,24 @@ describe('GET /api/transactions', () => {
     expect(Math.max(...instants)).toBeLessThan(Date.parse('2025-02-01T00:00:00Z'))
   })
 
+  test('accepts the expanded years of instants outside 0000 to 9999', async () => {
+    const from = encodeURIComponent('-000001-12-31T15:00:00.000Z')
+    const to = encodeURIComponent('+010000-01-01T05:00:00.000Z')
+    const response = await get(`/api/transactions?from=${from}&to=${to}&limit=1`)
+    expect(response.status).toBe(200)
+  })
+
+  test.each(['2025-13-01T00:00:00Z', '2025-02-30T00:00:00Z', '-000000-01-01T00:00:00Z'])(
+    'rejects %s, which is no real instant',
+    async (instant) => {
+      const response = await get(`/api/transactions?from=${encodeURIComponent(instant)}`)
+      expect(response.status).toBe(400)
+      expect(await response.json()).toMatchObject({
+        error: { code: 'invalid_param', param: 'from' },
+      })
+    },
+  )
+
   test.each([
     ['from', 'from=2025-01-01T00:00:00+02:00'],
     ['to', 'to=yesterday'],

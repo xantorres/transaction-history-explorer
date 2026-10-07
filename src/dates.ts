@@ -27,7 +27,7 @@ export function zonedDayStart(date: string, timeZone: string) {
 }
 
 export const nextDay = (date: string) =>
-  new Date(Date.parse(`${date}T00:00:00Z`) + DAY).toISOString().slice(0, 10)
+  new Date(Date.parse(`${date}T00:00:00Z`) + DAY).toISOString().replace(/T.*/, '')
 
 export function isIsoDate(value: string) {
   const instant = Date.parse(`${value}T00:00:00Z`)

@@ -8,7 +8,7 @@ interface ApiOptions {
   simulateFaults?: boolean
 }
 
-const UTC_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/
+const UTC_INSTANT = /^([+-]\d{6}|\d{4})-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/
 const MAX_LIMIT = 5000
 
 class InvalidParam extends Error {
@@ -58,7 +58,12 @@ function matching(params: URLSearchParams, name: string, pattern: RegExp, expect
 function parseFilters(params: URLSearchParams): Filters {
   const instant = (name: string) => {
     const value = matching(params, name, UTC_INSTANT, 'an ISO 8601 instant in UTC')
-    return value === undefined ? undefined : Date.parse(value)
+    if (value === undefined) return undefined
+    const time = Date.parse(value)
+    // Date.parse rolls February 30 over into March, so a real instant reads back unchanged.
+    const seconds = value.replace(/(\.\d+)?Z$/, '')
+    if (!Number.isNaN(time) && new Date(time).toISOString().startsWith(seconds)) return time
+    throw new InvalidParam(name, `${name} must be a real date and time`)
   }
   return {
     q: params.get('q')?.trim() || undefined,

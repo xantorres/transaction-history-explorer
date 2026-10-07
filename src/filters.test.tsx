@@ -137,6 +137,13 @@ test('date filters send the viewer calendar days as UTC instants', async () => {
   })
 })
 
+test('the last day of the calendar can end the range', async () => {
+  const api = installApi()
+  renderApp('?to=9999-12-31')
+  await waitForRows()
+  expect(api.requests.at(-1)?.url.searchParams.get('to')).toBe('+010000-01-01T05:00:00.000Z')
+})
+
 test('amount filters accept a decimal comma and flag garbage', () => {
   installApi()
   renderApp()
