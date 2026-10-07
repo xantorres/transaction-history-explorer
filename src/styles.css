@@ -97,6 +97,21 @@ button:disabled {
   gap: 12px;
 }
 
+.export {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.export [role='status'] {
+  overflow: hidden;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;

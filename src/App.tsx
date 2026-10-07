@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
 import { summaryQuery, toFilters } from './api.ts'
+import { ExportButton } from './components/ExportButton.tsx'
 import { FilterBar } from './components/FilterBar.tsx'
 import { SummaryBar } from './components/SummaryBar.tsx'
 import { TransactionDrawer } from './components/TransactionDrawer.tsx'
@@ -17,6 +18,11 @@ export function App() {
     <main className="app">
       <header className="masthead">
         <h1>Transactions</h1>
+        <ExportButton
+          filters={filters}
+          sort={view.sort}
+          total={summary.isPlaceholderData ? undefined : summary.data?.count}
+        />
       </header>
       <FilterBar view={view} />
       <SummaryBar summary={summary} />

@@ -42,6 +42,11 @@ export function canonicalZone(timeZone: string) {
   }
 }
 
+export function today() {
+  const now = new Date()
+  return new Date(now.getTime() - now.getTimezoneOffset() * MINUTE).toISOString().slice(0, 10)
+}
+
 export const viewerZone = new Intl.DateTimeFormat().resolvedOptions().timeZone
 
 const dateTime = new Intl.DateTimeFormat(navigator.language, {

@@ -48,14 +48,15 @@ export function toFilters({ q, from, to, tz, min, max, currency, status, categor
   }
 }
 
+type PageQuery = Filters & { sort: Sort; cursor: string; limit?: string }
+
+export const fetchPage = (query: PageQuery, signal: AbortSignal) =>
+  getJson(`/api/transactions?${toQuery(query)}`, signal) as Promise<Page>
+
 export const transactionsQuery = (filters: Filters, sort: Sort) =>
   infiniteQueryOptions({
     queryKey: ['transactions', filters, sort],
-    queryFn: ({ pageParam, signal }) =>
-      getJson(
-        `/api/transactions?${toQuery({ ...filters, sort, cursor: pageParam })}`,
-        signal,
-      ) as Promise<Page>,
+    queryFn: ({ pageParam, signal }) => fetchPage({ ...filters, sort, cursor: pageParam }, signal),
     initialPageParam: '',
     getNextPageParam: (page) => page.nextCursor,
     placeholderData: keepPreviousData,

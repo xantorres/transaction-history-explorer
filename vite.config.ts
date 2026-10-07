@@ -45,5 +45,6 @@ export default defineConfig({
     env: { TZ: 'America/New_York' },
     setupFiles: ['src/test/setup.ts'],
     unstubGlobals: true,
+    restoreMocks: true,
   },
 })
