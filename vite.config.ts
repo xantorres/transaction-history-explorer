@@ -15,20 +15,21 @@ function mockApi(simulateFaults: boolean): Plugin {
     res.on('close', () => {
       controller.abort()
     })
-    const request = new Request(new URL(req.originalUrl ?? '/', 'http://localhost'), {
-      method: req.method,
-      headers: { cookie: req.headers.cookie ?? '' },
-      signal: controller.signal,
+    // Request throws on methods like TRACE, and that has to reach the catch, not the dev server.
+    const respond = async () => {
+      const request = new Request(new URL(req.originalUrl ?? '/', 'http://localhost'), {
+        method: req.method,
+        headers: { cookie: req.headers.cookie ?? '' },
+        signal: controller.signal,
+      })
+      const response = await load()(request)
+      res.writeHead(response.status, Object.fromEntries(response.headers))
+      res.end(await response.text())
+    }
+    respond().catch(() => {
+      res.statusCode = 500
+      res.end()
     })
-    load()(request)
-      .then(async (response) => {
-        res.writeHead(response.status, Object.fromEntries(response.headers))
-        res.end(await response.text())
-      })
-      .catch(() => {
-        res.statusCode = 500
-        res.end()
-      })
   }
 
   const mount = (server: Pick<ViteDevServer, 'httpServer' | 'middlewares'>) => {
