@@ -258,7 +258,7 @@ button:disabled {
 }
 
 .table {
-  --columns: 10.5rem minmax(0, 1.3fr) minmax(0, 2fr) 6.5rem 6.5rem 9rem;
+  --columns: 12rem minmax(0, 1.3fr) minmax(0, 2fr) 6.5rem 6.5rem 9rem;
   position: relative;
   display: flex;
   flex: 1;
@@ -633,7 +633,7 @@ button:disabled {
 
 @media (width < 1000px) {
   .table {
-    --columns: 9.5rem minmax(0, 1fr) 6.5rem 6.5rem 8.5rem;
+    --columns: 12rem minmax(0, 1fr) 6.5rem 6.5rem 8.5rem;
   }
 
   [data-column='description'] {

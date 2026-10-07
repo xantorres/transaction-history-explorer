@@ -56,7 +56,7 @@ function Totals({ currency, in: incoming, out, pending }: CurrencyTotals) {
   return (
     <div className="stat">
       <dt>{currency}</dt>
-      <dd data-direction="in">
+      <dd data-direction={incoming > 0 ? 'in' : undefined}>
         <span>In</span> {formatMoney(incoming, currency)}
       </dd>
       <dd>
