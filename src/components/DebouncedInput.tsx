@@ -25,7 +25,7 @@ export function DebouncedInput({
   const [draft, setDraft] = useState(value)
   const [synced, setSynced] = useState(value)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const pushed = useRef(false)
+  const committed = useRef<string>(undefined)
 
   // Only an outside change (history, Clear filters) rewrites what the user typed.
   if (value !== synced) {
@@ -33,19 +33,20 @@ export function DebouncedInput({
     if (value !== parse(draft)) setDraft(value)
   }
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    // Back or Forward moved off this burst's entry, so the next commit pushes a new one.
+    if (value !== committed.current) committed.current = undefined
+    return () => {
       clearTimeout(timer.current)
-    },
-    [value],
-  )
+    }
+  }, [value])
 
   function commit(next: string) {
     clearTimeout(timer.current)
     const parsed = parse(next)
     if (parsed === value) return
-    onCommit(parsed, pushed.current ? 'replace' : 'push')
-    pushed.current = true
+    onCommit(parsed, committed.current === undefined ? 'push' : 'replace')
+    committed.current = parsed
   }
 
   return (
@@ -56,7 +57,7 @@ export function DebouncedInput({
         value={draft}
         aria-invalid={(draft.trim() !== '' && parse(draft) === '') || undefined}
         onFocus={() => {
-          pushed.current = false
+          committed.current = undefined
         }}
         onChange={(event) => {
           const next = event.target.value

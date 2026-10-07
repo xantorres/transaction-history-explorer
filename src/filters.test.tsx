@@ -74,6 +74,34 @@ test('back and forward restore the filters and their rows', async () => {
   expect(field('Search').value).toBe('kestrel')
 })
 
+test('typing after Back keeps the entry Back returned to', async () => {
+  installApi()
+  renderApp()
+  fireEvent.focus(field('Search'))
+  fireEvent.change(field('Search'), { target: { value: 'kestrel' } })
+  await waitFor(() => {
+    expect(location.search).toBe('?q=kestrel')
+  })
+
+  act(() => {
+    history.back()
+  })
+  await waitFor(() => {
+    expect(field('Search').value).toBe('')
+  })
+  fireEvent.change(field('Search'), { target: { value: 'aegean' } })
+  await waitFor(() => {
+    expect(location.search).toBe('?q=aegean')
+  })
+
+  act(() => {
+    history.back()
+  })
+  await waitFor(() => {
+    expect(location.search).toBe('')
+  })
+})
+
 test('a slow earlier search never replaces a newer one', async () => {
   const api = installApi()
   const isSlow = (url: URL) =>
