@@ -122,10 +122,23 @@ export const openTransaction = (tx: string) => {
   updateView({ tx }, 'push', { drawer: true })
 }
 
+let leaving = false
+
 export function closeTransaction() {
   // Only a drawer opened from a row owns the entry below; Back on a shared link would leave the app.
-  if ((history.state as { drawer?: boolean } | null)?.drawer) history.back()
-  else updateView({ tx: '' }, 'replace')
+  if (!(history.state as { drawer?: boolean } | null)?.drawer) updateView({ tx: '' }, 'replace')
+  // Until Back lands this is still the drawer's entry, so a second close would step back twice.
+  else if (!leaving) {
+    leaving = true
+    window.addEventListener(
+      'popstate',
+      () => {
+        leaving = false
+      },
+      { once: true },
+    )
+    history.back()
+  }
 }
 
 export const canonicalizeUrl = () => {

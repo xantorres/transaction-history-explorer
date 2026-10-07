@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import type { Status } from './domain.ts'
 import { formatMoney } from './money.ts'
 import { installApi, store } from './test/api-stub.ts'
@@ -111,6 +111,22 @@ test('closing a row steps back, so Forward reopens it', async () => {
   await waitFor(() => {
     expect(drawerFor(first?.counterparty)).toBeDefined()
   })
+})
+
+test('closing twice before Back lands steps back once', async () => {
+  installApi()
+  renderApp()
+  await waitForRows()
+  openFirstRow()
+  const back = vi.spyOn(history, 'back')
+  const close = within(drawer()).getByRole('button', { name: 'Close' })
+  fireEvent.click(close)
+  fireEvent.click(close)
+  expect(back).toHaveBeenCalledTimes(1)
+  await waitFor(() => {
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+  expect(location.search).toBe('')
 })
 
 test('modified clicks keep the browser new-tab behaviour', async () => {
