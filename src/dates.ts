@@ -31,7 +31,9 @@ export const nextDay = (date: string) =>
 
 export function isIsoDate(value: string) {
   const instant = Date.parse(`${value}T00:00:00Z`)
-  return Number.isFinite(instant) && new Date(instant).toISOString().slice(0, 10) === value
+  const real = Number.isFinite(instant) && new Date(instant).toISOString().slice(0, 10) === value
+  // A date input only holds years from 0001 on.
+  return real && value >= '0001'
 }
 
 export function canonicalZone(timeZone: string) {

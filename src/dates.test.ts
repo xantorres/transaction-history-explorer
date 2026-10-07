@@ -56,9 +56,11 @@ test('nextDay crosses months, years and leap days', () => {
 test('isIsoDate accepts real calendar days only', () => {
   expect(isIsoDate('2026-02-28')).toBe(true)
   expect(isIsoDate('2028-02-29')).toBe(true)
+  expect(isIsoDate('0001-01-01')).toBe(true)
   for (const value of ['2026-02-29', '2026-02-30', '2026-13-01', '2026-1-1', '20260101', '']) {
     expect(isIsoDate(value)).toBe(false)
   }
+  expect(isIsoDate('0000-12-31')).toBe(false)
 })
 
 test('canonicalZone resolves IANA names and rejects the rest', () => {
