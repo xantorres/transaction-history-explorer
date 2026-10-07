@@ -148,6 +148,14 @@ test('amount filters accept a decimal comma and flag garbage', () => {
   expect(field('Max amount').getAttribute('aria-invalid')).toBe('true')
 })
 
+test('garbage in an amount keeps the bound already applied', () => {
+  installApi()
+  renderApp('?min=10')
+  fill('Min amount', '10x')
+  expect(location.search).toBe('?min=10')
+  expect(field('Min amount').getAttribute('aria-invalid')).toBe('true')
+})
+
 test('clearing filters keeps the sort order', () => {
   installApi()
   renderApp('?q=kestrel&currency=EUR&sort=amount')

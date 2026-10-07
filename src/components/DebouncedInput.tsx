@@ -41,10 +41,12 @@ export function DebouncedInput({
     }
   }, [value])
 
+  const invalid = (text: string) => text.trim() !== '' && parse(text) === ''
+
   function commit(next: string) {
     clearTimeout(timer.current)
     const parsed = parse(next)
-    if (parsed === value) return
+    if (parsed === value || invalid(next)) return
     onCommit(parsed, committed.current === undefined ? 'push' : 'replace')
     committed.current = parsed
   }
@@ -55,7 +57,7 @@ export function DebouncedInput({
       <input
         {...props}
         value={draft}
-        aria-invalid={(draft.trim() !== '' && parse(draft) === '') || undefined}
+        aria-invalid={invalid(draft) || undefined}
         onFocus={() => {
           committed.current = undefined
         }}
