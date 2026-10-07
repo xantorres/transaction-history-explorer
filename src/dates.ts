@@ -11,3 +11,35 @@ export function zoneOffset(timeZone: string, instant: number) {
   const offset = Number(hours) * 60 + Number(minutes)
   return sign === '-' ? -offset : offset
 }
+
+const MINUTE = 60_000
+const DAY = 86_400_000
+
+export function zonedDayStart(date: string, timeZone: string) {
+  const midnight = Date.parse(`${date}T00:00:00Z`)
+  const candidates = [midnight - DAY, midnight + DAY].map(
+    (instant) => midnight - zoneOffset(timeZone, instant) * MINUTE,
+  )
+  const isMidnight = (instant: number) =>
+    instant + zoneOffset(timeZone, instant) * MINUTE === midnight
+  // A daylight saving jump at midnight skips 00:00, so the day starts at the jump.
+  return candidates.find(isMidnight) ?? Math.max(...candidates)
+}
+
+export const nextDay = (date: string) =>
+  new Date(Date.parse(`${date}T00:00:00Z`) + DAY).toISOString().slice(0, 10)
+
+export function isIsoDate(value: string) {
+  const instant = Date.parse(`${value}T00:00:00Z`)
+  return Number.isFinite(instant) && new Date(instant).toISOString().slice(0, 10) === value
+}
+
+export function canonicalZone(timeZone: string) {
+  try {
+    return new Intl.DateTimeFormat('en-US', { timeZone }).resolvedOptions().timeZone
+  } catch {
+    return undefined
+  }
+}
+
+export const viewerZone = new Intl.DateTimeFormat().resolvedOptions().timeZone

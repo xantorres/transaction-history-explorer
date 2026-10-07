@@ -40,5 +40,9 @@ function mockApi(): Plugin {
 
 export default defineConfig({
   plugins: [react(), mockApi()],
-  test: { environment: 'jsdom', env: { TZ: 'America/New_York' } },
+  test: {
+    environment: 'jsdom',
+    env: { TZ: 'America/New_York' },
+    setupFiles: ['src/test/setup.ts'],
+  },
 })

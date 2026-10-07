@@ -1,5 +1,7 @@
 import { CURRENCIES, type Currency } from './domain.ts'
 
+export const DECIMAL = /^\d+(\.\d+)?$/
+
 const DIGITS = Object.fromEntries(
   CURRENCIES.map((currency) => {
     const { maximumFractionDigits = 2 } = new Intl.NumberFormat('en', {

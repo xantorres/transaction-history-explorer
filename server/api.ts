@@ -1,4 +1,5 @@
 import { CATEGORIES, CURRENCIES, SORTS, STATUSES, type ApiErrorBody } from '../src/domain.ts'
+import { DECIMAL } from '../src/money.ts'
 import { CursorError, type Filters, type Store } from './store.ts'
 
 interface ApiOptions {
@@ -7,7 +8,6 @@ interface ApiOptions {
 }
 
 const UTC_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/
-const DECIMAL = /^\d+(\.\d+)?$/
 const MAX_LIMIT = 5000
 
 class InvalidParam extends Error {
