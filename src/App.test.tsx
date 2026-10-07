@@ -1,5 +1,5 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { expect, test } from 'vitest'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { expect, test, vi } from 'vitest'
 import { ROW_HEIGHT } from './components/TransactionTable.tsx'
 import { formatMoney } from './money.ts'
 import { installApi, store } from './test/api-stub.ts'
@@ -64,6 +64,37 @@ test('a new result starts at the top of the table', async () => {
   expect(body.scrollTop).toBe(40 * ROW_HEIGHT)
   fireEvent.change(field('Currency'), { target: { value: 'EUR' } })
   expect(body.scrollTop).toBe(0)
+})
+
+test('a result revisited a minute after it loaded reloads only the page it opens on', async () => {
+  const api = installApi()
+  vi.useFakeTimers({ toFake: ['Date'] })
+  renderApp()
+  await waitForRows()
+  const [, body] = screen.getAllByRole('rowgroup')
+  fireEvent.scroll(body as HTMLElement, { target: { scrollTop: 90 * ROW_HEIGHT } })
+  await waitFor(() => {
+    expect(hrefAt(102)).toBeTruthy()
+  })
+  vi.setSystemTime(Date.now() + 50_000)
+  fireEvent.change(field('Currency'), { target: { value: 'EUR' } })
+  await waitFor(() => {
+    expect(hrefAt(2)).toContain('currency=EUR')
+  })
+
+  vi.setSystemTime(Date.now() + 11_000)
+  const sent = api.requests.length
+  act(() => {
+    history.back()
+  })
+  await waitFor(() => {
+    expect(hrefAt(2)).toMatch(/^\?tx=/)
+  })
+  await waitFor(() => {
+    expect(screen.getByRole('table').getAttribute('aria-busy')).toBe('false')
+  })
+  const lists = api.requests.slice(sent).filter(({ url }) => url.pathname === '/api/transactions')
+  expect(lists.map(({ url }) => url.searchParams.has('cursor'))).toEqual([false])
 })
 
 test('labels each row with its status', async () => {

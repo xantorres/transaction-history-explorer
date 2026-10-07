@@ -85,8 +85,8 @@ export const transactionQuery = (id: string, client: QueryClient) =>
     initialDataUpdatedAt: 0,
   })
 
-export const createQueryClient = () =>
-  new QueryClient({
+export function createQueryClient() {
+  const client = new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 60_000,
@@ -96,3 +96,14 @@ export const createQueryClient = () =>
       },
     },
   })
+  client.getQueryCache().subscribe(({ type, query }) => {
+    if (type !== 'observerRemoved' || query.getObserversCount() > 0) return
+    // A list comes back scrolled to the top, so its refetch then should reload one page, not all.
+    client.setQueriesData<InfiniteData<Page>>(
+      { queryKey: ['transactions'], predicate: (candidate) => candidate === query },
+      (data) => data && { pages: data.pages.slice(0, 1), pageParams: data.pageParams.slice(0, 1) },
+      { updatedAt: query.state.dataUpdatedAt },
+    )
+  })
+  return client
+}
