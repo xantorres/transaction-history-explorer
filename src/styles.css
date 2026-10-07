@@ -190,6 +190,14 @@ button:is(:disabled, [aria-disabled='true']) {
   display: none;
 }
 
+.filters-toggle::after {
+  content: ' ▾' / '';
+}
+
+.filters-toggle[aria-expanded='true']::after {
+  content: ' ▴' / '';
+}
+
 .zone-note {
   flex-basis: 100%;
   margin: 0;

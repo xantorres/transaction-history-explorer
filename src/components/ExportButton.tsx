@@ -43,16 +43,20 @@ export function ExportButton({ filters, sort, total }: ExportButtonProps) {
     setJob(undefined)
   }
 
+  const empty = !job && total === 0
+
   return (
     <div className="export">
       <span role="status">{job ? describe(job) : failed && "Couldn't export. Try again."}</span>
       <button
         type="button"
+        aria-label={job && 'Cancel export'}
+        aria-disabled={empty || undefined}
         onClick={(event) => {
           // A double click's second click lands on whatever its first click put here.
           if (event.detail > 1) return
           if (job) job.controller.abort()
-          else void start()
+          else if (!empty) void start()
         }}
       >
         {job ? 'Cancel' : 'Export CSV'}

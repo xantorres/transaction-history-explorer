@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useId, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { viewerZone } from '../dates.ts'
 import { CATEGORIES, CURRENCIES, STATUS_LABELS, STATUSES } from '../domain.ts'
@@ -16,6 +16,7 @@ function parseAmount(draft: string) {
 
 export function FilterBar({ view }: { view: View }) {
   const [open, setOpen] = useState(false)
+  const id = useId()
   const clears = useClears()
   const [chosen, setChosen] = useState<{ param: string; value: string }>()
   const { q, from, to, min, max, currency, status, category } = view
@@ -45,7 +46,7 @@ export function FilterBar({ view }: { view: View }) {
   })
 
   return (
-    <search className="filters" data-open={open || undefined}>
+    <search id={id} className="filters" data-open={open || undefined}>
       <DebouncedInput
         label="Search"
         type="search"
@@ -55,6 +56,7 @@ export function FilterBar({ view }: { view: View }) {
       <button
         type="button"
         className="filters-toggle"
+        aria-controls={id}
         aria-expanded={open}
         onClick={() => {
           setOpen(!open)

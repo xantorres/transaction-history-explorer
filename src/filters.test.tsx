@@ -166,6 +166,18 @@ test('waits for an IME composition to end before searching', () => {
   expect(location.search).toBe(`?${new URLSearchParams({ q: '東京' }).toString()}`)
 })
 
+test('the Filters toggle names what it opens and whether it is open', () => {
+  installApi()
+  renderApp()
+  const toggle = screen.getByRole('button', { name: 'Filters' })
+  expect(document.getElementById(toggle.getAttribute('aria-controls') ?? '')).toBe(
+    toggle.closest('search'),
+  )
+  expect(toggle.getAttribute('aria-expanded')).toBe('false')
+  fireEvent.click(toggle)
+  expect(toggle.getAttribute('aria-expanded')).toBe('true')
+})
+
 test('Clear filters drops a search still being typed', () => {
   installApi()
   renderApp('?q=kestrel')

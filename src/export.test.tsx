@@ -105,7 +105,7 @@ test('cancelling stops the export without a download or an error', async () => {
   renderApp()
 
   fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }))
-  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel export' }))
   await screen.findByRole('button', { name: 'Export CSV' })
   expect(api.requests.find(({ url }) => isChunk(url))?.signal.aborted).toBe(true)
   expect(files).toHaveLength(0)
@@ -118,7 +118,7 @@ test('a double click exports instead of cancelling itself', async () => {
   renderApp('?status=BOOKED')
 
   fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }), { detail: 1 })
-  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }), { detail: 2 })
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel export' }), { detail: 2 })
   await waitFor(() => {
     expect(files).toHaveLength(1)
   })
@@ -131,6 +131,18 @@ test('the second click of a double click never starts an export', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }), { detail: 2 })
   expect(screen.getByRole('button', { name: 'Export CSV' })).toBeDefined()
   expect(api.requests.some(({ url }) => isChunk(url))).toBe(false)
+})
+
+test('an empty result has nothing to export', async () => {
+  installApi(store)
+  renderApp('?q=no-such-counterparty')
+  const button = screen.getByRole('button', { name: 'Export CSV' })
+  await waitFor(() => {
+    expect(button.getAttribute('aria-disabled')).toBe('true')
+  })
+  fireEvent.click(button)
+  expect(button.textContent).toBe('Export CSV')
+  expect(progress()).toBe('')
 })
 
 test('a failed chunk ends the export with a message and can be retried', async () => {
