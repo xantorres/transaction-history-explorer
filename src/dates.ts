@@ -12,8 +12,8 @@ export function zoneOffset(timeZone: string, instant: number) {
   return sign === '-' ? -offset : offset
 }
 
-const MINUTE = 60_000
-const DAY = 86_400_000
+export const MINUTE = 60_000
+export const DAY = 86_400_000
 
 export function zonedDayStart(date: string, timeZone: string) {
   const midnight = Date.parse(`${date}T00:00:00Z`)

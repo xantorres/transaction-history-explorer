@@ -1,12 +1,29 @@
 import type { Category, Currency, Status, Transaction } from '../src/domain.ts'
-import { zoneOffset } from '../src/dates.ts'
+import { DAY, MINUTE, zoneOffset } from '../src/dates.ts'
+import { minorDigits } from '../src/money.ts'
 
 export const DATA_START = Date.UTC(2024, 9, 1)
 export const DATA_END = Date.UTC(2026, 9, 1)
-const DAY = 86_400_000
 const PENDING_DAYS = 5
 
+export const EURO_RATES: Record<Currency, number> = { EUR: 1, GBP: 0.85, JPY: 160, USD: 1.09 }
+
 type Random = () => number
+
+interface Context {
+  random: Random
+  incoming: boolean
+  reference: string
+  period: string
+  quarter: string
+  year: string
+}
+
+interface Payee {
+  name: string
+  describe: (context: Context) => string
+  currency: Currency | undefined
+}
 
 const ZONES = [
   'Europe/Nicosia',
@@ -44,52 +61,7 @@ const CUSTOMERS = [
   'Zürich Data Systems AG',
 ]
 
-const COUNTERPARTIES: Record<Exclude<Category, 'Sales' | 'Refunds'>, string[]> = {
-  Suppliers: [
-    'Atlas Office Supply',
-    'Brightwire Electronics',
-    'Corfu Print House',
-    'Delta Packaging BV',
-    'Evergreen Facilities',
-    'Kowalski i Syn Sp. z o.o.',
-    'Mesogeia Catering',
-  ],
-  Software: [
-    'Cloudway Hosting',
-    'Ledgerly Accounting',
-    'Pipeline CI Inc.',
-    'Signalbox Messaging',
-    'Vaultkeep Security',
-  ],
-  Marketing: ['Adwave Media', 'Brandsmith Agency', 'Clickstream Partners', 'Studio Ocho'],
-  Travel: [
-    'Aerolínea Azul',
-    'Hotel Ermou Athens',
-    'Kyoto Station Hotel',
-    'Larnaca Car Hire',
-    'Skyward Airlines',
-  ],
-  Payroll: [
-    'Eleni Georgiou',
-    'Andreas Christodoulou',
-    'Zoë Müller',
-    'José Álvarez',
-    "Siobhán O'Connor",
-    'Łukasz Nowak',
-    'Chloé Dubois',
-    'Björn Andersson',
-    'Ngozi Okafor',
-    'Hiroshi Tanaka',
-    'Priya Raman',
-    'Mateo Rossi',
-  ],
-  Rent: ['Limassol Marina Offices', 'Nicosia Business Centre', 'Shoreditch Workspace Ltd'],
-  Taxes: ['Tax Department', 'VAT Service', 'Social Insurance Fund'],
-  Fees: ['Mediterranean Bank', 'CardGate Processing', 'SwiftLink Correspondent'],
-  Transfers: ['Treasury account', 'Reserve account', 'Payment provider settlement'],
-}
-
-const HOSTILE = [
+export const HOSTILE = [
   '=HYPERLINK("https://example.com/refund","Claim refund")',
   "=cmd|' /C calc'!A0",
   '=1+2',
@@ -103,6 +75,87 @@ const HOSTILE = [
   '<script>alert(1)</script>',
   'Crème Brûlée Café',
 ]
+
+const each = (names: string[], describe: Payee['describe'], currency?: Currency): Payee[] =>
+  names.map((name) => ({ name, describe, currency }))
+
+const transfers = (account: string) =>
+  each([account], ({ incoming }) => `Transfer ${incoming ? 'from' : 'to'} ${account.toLowerCase()}`)
+
+const rent = ({ period }: Context) => `Office rent ${period}`
+
+const PAYEES: Record<Category, Payee[]> = {
+  Sales: each(CUSTOMERS, ({ year, reference }) => `Invoice INV-${year}-${reference}`),
+  Refunds: each(CUSTOMERS, ({ year, reference }) => `Credit note CN-${year}-${reference}`),
+  Suppliers: each(
+    [
+      'Atlas Office Supply',
+      'Brightwire Electronics',
+      'Corfu Print House',
+      'Delta Packaging BV',
+      'Evergreen Facilities',
+      'Kowalski i Syn Sp. z o.o.',
+      'Mesogeia Catering',
+    ],
+    ({ reference }) => `Purchase order PO-${reference}`,
+  ),
+  Software: each(
+    [
+      'Cloudway Hosting',
+      'Ledgerly Accounting',
+      'Pipeline CI Inc.',
+      'Signalbox Messaging',
+      'Vaultkeep Security',
+    ],
+    ({ period }) => `${period} subscription`,
+  ),
+  Marketing: each(
+    ['Adwave Media', 'Brandsmith Agency', 'Clickstream Partners', 'Studio Ocho'],
+    ({ period }) => `Campaign ${period}`,
+  ),
+  Travel: [
+    ...each(['Aerolínea Azul', 'Skyward Airlines'], ({ random }) =>
+      pick(random, ['Flight LCA-LHR', 'Flight LHR-JFK']),
+    ),
+    ...each(['Hotel Ermou Athens', 'Kyoto Station Hotel'], ({ random }) =>
+      pick(random, ['Hotel, 2 nights', 'Hotel, 3 nights']),
+    ),
+    ...each(['Larnaca Car Hire'], () => 'Car hire'),
+  ],
+  Payroll: each(
+    [
+      'Eleni Georgiou',
+      'Andreas Christodoulou',
+      'Zoë Müller',
+      'José Álvarez',
+      "Siobhán O'Connor",
+      'Łukasz Nowak',
+      'Chloé Dubois',
+      'Björn Andersson',
+      'Ngozi Okafor',
+      'Hiroshi Tanaka',
+      'Priya Raman',
+      'Mateo Rossi',
+    ],
+    ({ period }) => `Salary ${period}`,
+    'EUR',
+  ),
+  Rent: [
+    ...each(['Limassol Marina Offices', 'Nicosia Business Centre'], rent, 'EUR'),
+    ...each(['Shoreditch Workspace Ltd'], rent, 'GBP'),
+  ],
+  Taxes: [
+    ...each(['VAT Service'], ({ quarter, year }) => `VAT return Q${quarter} ${year}`, 'EUR'),
+    ...each(['Tax Department'], () => 'Corporate tax instalment', 'EUR'),
+    ...each(['Social Insurance Fund'], ({ period }) => `Social insurance ${period}`, 'EUR'),
+  ],
+  Fees: [
+    ...each(['Mediterranean Bank'], () => 'Monthly account fee'),
+    ...each(['CardGate Processing'], () => 'Card processing fees'),
+    ...each(['SwiftLink Correspondent'], () => 'FX conversion fee'),
+  ],
+  Transfers: [...transfers('Treasury account'), ...transfers('Reserve account')],
+}
 
 const AMOUNT_RANGES: Record<Category, [number, number]> = {
   Sales: [20, 25_000],
@@ -164,7 +217,7 @@ const between = (random: Random, min: number, max: number) =>
 const pad = (value: number, length = 2) => String(value).padStart(length, '0')
 
 function withOffset(instant: number, offset: number) {
-  const local = new Date(instant + offset * 60_000).toISOString().slice(0, 19)
+  const local = new Date(instant + offset * MINUTE).toISOString().slice(0, 19)
   const sign = offset < 0 ? '-' : '+'
   const minutes = Math.abs(offset)
   return `${local}${sign}${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`
@@ -174,45 +227,22 @@ function amountFor(random: Random, category: Category, currency: Currency) {
   const [low, high] = AMOUNT_RANGES[category]
   const top = random() < 0.85 ? Math.min(high, low * 10) : high
   const cents = between(random, low * 100, top * 100)
-  return currency === 'JPY' ? Math.floor((cents * 16) / 10) : cents
+  const scale = 10 ** (minorDigits(currency) - minorDigits('EUR'))
+  return Math.round(cents * EURO_RATES[currency] * scale)
 }
 
-function isIncoming(random: Random, category: Category) {
-  return category === 'Sales' || (category === 'Transfers' && random() < 0.5)
-}
+const isIncoming = (random: Random, category: Category) =>
+  category === 'Sales' || (category === 'Transfers' && random() < 0.5)
 
-function descriptionFor(random: Random, category: Category, incoming: boolean, instant: number) {
+function contextFor(random: Random, incoming: boolean, instant: number, index: number): Context {
   const date = new Date(instant)
-  const year = String(date.getUTCFullYear())
-  const period = PERIOD.format(instant)
-  const reference = pad(between(random, 1, 9999), 4)
-  switch (category) {
-    case 'Sales':
-      return `Invoice INV-${year}-${reference}`
-    case 'Refunds':
-      return `Refund of INV-${year}-${reference}`
-    case 'Suppliers':
-      return `Purchase order PO-${reference}`
-    case 'Software':
-      return `${period} subscription`
-    case 'Marketing':
-      return `Campaign ${period}`
-    case 'Payroll':
-      return `Salary ${period}`
-    case 'Rent':
-      return `Office rent ${period}`
-    case 'Travel':
-      return pick(random, ['Flight LCA-LHR', 'Flight LHR-JFK', 'Hotel, 3 nights', 'Car hire'])
-    case 'Taxes':
-      return pick(random, [
-        `VAT return Q${String(Math.floor(date.getUTCMonth() / 3) + 1)} ${year}`,
-        'Corporate tax instalment',
-        `Social insurance ${period}`,
-      ])
-    case 'Fees':
-      return pick(random, ['Monthly account fee', 'Card processing fees', 'FX conversion fee'])
-    case 'Transfers':
-      return incoming ? 'Settlement from payment provider' : 'Transfer to reserve account'
+  return {
+    random,
+    incoming,
+    reference: pad(index + 1, 6),
+    period: PERIOD.format(instant),
+    quarter: String(Math.floor(date.getUTCMonth() / 3) + 1),
+    year: String(date.getUTCFullYear()),
   }
 }
 
@@ -227,14 +257,12 @@ export function generateTransactions(count: number, seed = 20_240_101): Transact
   return Array.from({ length: count }, (_, index) => {
     const instant = DATA_START + Math.floor(random() * seconds) * 1000
     const category = pick(random, CATEGORY_TABLE)
-    const currency = pick(random, CURRENCY_TABLE)
+    const payee = pick(random, PAYEES[category])
+    const currency = payee.currency ?? pick(random, CURRENCY_TABLE)
     const incoming = isIncoming(random, category)
     const magnitude = amountFor(random, category, currency)
-    let counterparty =
-      category === 'Sales' || category === 'Refunds'
-        ? pick(random, CUSTOMERS)
-        : pick(random, COUNTERPARTIES[category])
-    let description = descriptionFor(random, category, incoming, instant)
+    let counterparty = payee.name
+    let description = payee.describe(contextFor(random, incoming, instant, index))
     if (random() < 0.005) {
       if (random() < 0.5) counterparty = pick(random, HOSTILE)
       else description = pick(random, HOSTILE)

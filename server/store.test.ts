@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import type { Sort, Transaction } from '../src/domain.ts'
 import { generateTransactions } from './data.ts'
-import { CursorError, createStore, type Filters } from './store.ts'
+import { CursorError, createStore, type Filters, type Store } from './store.ts'
 
 let sequence = 0
 const tx = (fields: Partial<Transaction>): Transaction => ({
@@ -16,12 +16,7 @@ const tx = (fields: Partial<Transaction>): Transaction => ({
   ...fields,
 })
 
-function pageThrough(
-  store: ReturnType<typeof createStore>,
-  filters: Filters,
-  sort: Sort,
-  limit: number,
-) {
+function pageThrough(store: Store, filters: Filters, sort: Sort, limit: number) {
   const ids: string[] = []
   let cursor: string | null = null
   do {
@@ -131,14 +126,16 @@ describe('list', () => {
     }
   })
 
-  test('sorts amounts by face value across currencies', () => {
+  test('ranks amounts in different currencies by their value in euros', () => {
     const rows = [
-      tx({ amount: 1200, currency: 'EUR' }),
-      tx({ amount: 1200, currency: 'JPY' }),
-      tx({ amount: -500, currency: 'GBP' }),
+      tx({ amount: 700, currency: 'EUR' }),
+      tx({ amount: 1000, currency: 'JPY' }),
+      tx({ amount: 950, currency: 'EUR' }),
+      tx({ amount: 800, currency: 'GBP' }),
+      tx({ amount: 1000, currency: 'USD' }),
     ]
     const page = createStore(rows).list({}, '-amount', null, 10)
-    expect(page.items).toEqual([rows[1], rows[0], rows[2]])
+    expect(page.items).toEqual([rows[2], rows[3], rows[4], rows[0], rows[1]])
   })
 
   test('rejects a cursor issued for another query', () => {
@@ -147,7 +144,22 @@ describe('list', () => {
     expect(nextCursor).not.toBeNull()
     expect(() => store.list({ currency: 'EUR' }, '-amount', nextCursor, 2)).toThrow(CursorError)
     expect(() => store.list({ currency: 'GBP' }, 'amount', nextCursor, 2)).toThrow(CursorError)
-    expect(() => store.list({}, 'amount', 'not-a-cursor', 2)).toThrow(CursorError)
+    expect(() => store.list({}, 'amount', 'not-a-cursor', 2)).toThrow('The cursor is malformed')
+  })
+
+  test.each<Filters>([
+    { q: 'atlas' },
+    { from: 0 },
+    { to: Date.UTC(2027, 0, 1) },
+    { min: '1' },
+    { max: '100' },
+    { currency: 'EUR' },
+    { status: 'BOOKED' },
+    { category: 'Suppliers' },
+  ])('rejects a cursor once %j joins the query', (filters) => {
+    const store = createStore(Array.from({ length: 5 }, () => tx({})))
+    const { nextCursor } = store.list({}, 'amount', null, 2)
+    expect(() => store.list(filters, 'amount', nextCursor, 2)).toThrow(CursorError)
   })
 })
 

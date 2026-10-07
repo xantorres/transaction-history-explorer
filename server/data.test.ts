@@ -1,8 +1,11 @@
 import { describe, expect, test } from 'vitest'
 import { CATEGORIES, CURRENCIES, STATUSES } from '../src/domain.ts'
-import { DATA_END, DATA_START, generateTransactions } from './data.ts'
+import { DATA_END, DATA_START, HOSTILE, generateTransactions } from './data.ts'
 
 const rows = generateTransactions(5_000)
+const honest = rows.filter(
+  (row) => !HOSTILE.includes(row.counterparty) && !HOSTILE.includes(row.description),
+)
 
 describe('generateTransactions', () => {
   test('is deterministic for a seed', () => {
@@ -52,5 +55,52 @@ describe('generateTransactions', () => {
     expect(text.some((value) => value.startsWith('='))).toBe(true)
     expect(text.some((value) => value.includes('\n'))).toBe(true)
     expect(text.some((value) => value.includes('"'))).toBe(true)
+  })
+
+  test('pays salaries, rent and taxes in the currency of the office', () => {
+    for (const row of honest) {
+      if (row.category !== 'Payroll' && row.category !== 'Rent' && row.category !== 'Taxes') {
+        continue
+      }
+      expect(row.currency).toBe(row.counterparty === 'Shoreditch Workspace Ltd' ? 'GBP' : 'EUR')
+    }
+  })
+
+  test('dates each salary by the month it pays for', () => {
+    const salaries = honest.filter((row) => row.category === 'Payroll')
+    expect(salaries.filter((row) => !/^Salary [A-Z][a-z]+ \d{4}$/.test(row.description))).toEqual(
+      [],
+    )
+  })
+
+  test('never reuses an invoice or credit note number', () => {
+    const numbers = honest.flatMap((row) => /\b(?:INV|CN)-\d{4}-\d+/.exec(row.description) ?? [])
+    expect(numbers.length).toBeGreaterThan(1_000)
+    expect(new Set(numbers).size).toBe(numbers.length)
+  })
+
+  test('describes a transfer by the direction the money moved', () => {
+    const transfers = honest.filter((row) => row.category === 'Transfers')
+    expect(transfers.length).toBeGreaterThan(0)
+    for (const row of transfers) {
+      const direction = row.amount > 0 ? 'from' : 'to'
+      expect(row.description).toBe(`Transfer ${direction} ${row.counterparty.toLowerCase()}`)
+    }
+  })
+
+  test.each([
+    ['Aerolínea Azul', 'Flight '],
+    ['Skyward Airlines', 'Flight '],
+    ['Kyoto Station Hotel', 'Hotel, '],
+    ['Larnaca Car Hire', 'Car hire'],
+    ['VAT Service', 'VAT return '],
+    ['Social Insurance Fund', 'Social insurance '],
+    ['Tax Department', 'Corporate tax instalment'],
+    ['Mediterranean Bank', 'Monthly account fee'],
+    ['CardGate Processing', 'Card processing fees'],
+  ])('bills %s only for what it sells', (counterparty, service) => {
+    const billed = honest.filter((row) => row.counterparty === counterparty)
+    expect(billed.length).toBeGreaterThan(0)
+    expect(billed.filter(({ description }) => !description.startsWith(service))).toEqual([])
   })
 })

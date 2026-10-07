@@ -19,14 +19,8 @@ class InvalidParam extends Error {
   }
 }
 
-const json = (status: number, body: unknown) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  })
-
-const error = (status: number, error: ApiErrorBody['error']) =>
-  json(status, { error } satisfies ApiErrorBody)
+const error = (status: number, error: ApiErrorBody['error'], headers?: Record<string, string>) =>
+  Response.json({ error } satisfies ApiErrorBody, { status, headers })
 
 function sleep(ms: number, signal: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
@@ -89,29 +83,35 @@ function faults(request: Request) {
   return new Set(value.split(','))
 }
 
-const PREFIX = '/api/transactions'
-
 type Endpoint = 'list' | 'page' | 'summary' | 'detail'
 
 function endpointOf({ pathname, searchParams }: URL): Endpoint | undefined {
-  if (pathname === PREFIX) return searchParams.has('cursor') ? 'page' : 'list'
+  if (pathname === '/api/transactions') return searchParams.has('cursor') ? 'page' : 'list'
   if (pathname === '/api/summary') return 'summary'
   if (/^\/api\/transactions\/[^/]+$/.test(pathname)) return 'detail'
   return undefined
 }
 
+function find(store: Store, pathname: string) {
+  try {
+    return store.get(decodeURIComponent(pathname.replace('/api/transactions/', '')))
+  } catch {
+    return undefined
+  }
+}
+
 function respond(store: Store, endpoint: Endpoint, url: URL) {
   const params = url.searchParams
   try {
-    if (endpoint === 'summary') return json(200, store.summary(parseFilters(params)))
+    if (endpoint === 'summary') return Response.json(store.summary(parseFilters(params)))
     if (endpoint === 'detail') {
-      const transaction = store.get(url.pathname.slice(PREFIX.length + 1))
-      if (transaction) return json(200, transaction)
+      const transaction = find(store, url.pathname)
+      if (transaction) return Response.json(transaction)
       return error(404, { code: 'not_found', message: 'No such transaction' })
     }
     const sort = oneOf(params, 'sort', SORTS) ?? '-date'
     const page = store.list(parseFilters(params), sort, params.get('cursor'), parseLimit(params))
-    return json(200, page)
+    return Response.json(page)
   } catch (reason) {
     if (reason instanceof InvalidParam) {
       return error(400, { code: 'invalid_param', message: reason.message, param: reason.param })
@@ -130,15 +130,18 @@ export function createApi({
 }: ApiOptions) {
   return async (request: Request): Promise<Response> => {
     await sleep(latency(), request.signal)
-    if (request.method !== 'GET') {
-      return error(405, { code: 'method_not_allowed', message: 'Only GET is supported' })
-    }
     const url = new URL(request.url)
     const endpoint = endpointOf(url)
     if (!endpoint) return error(404, { code: 'not_found', message: 'No such endpoint' })
-    if (simulateFaults && faults(request).has(endpoint)) {
-      return error(500, { code: 'injected_fault', message: `Simulated ${endpoint} failure` })
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      const message = 'Only GET and HEAD are supported'
+      return error(405, { code: 'method_not_allowed', message }, { allow: 'GET, HEAD' })
     }
-    return respond(store, endpoint, url)
+    const response =
+      simulateFaults && faults(request).has(endpoint)
+        ? error(500, { code: 'injected_fault', message: `Simulated ${endpoint} failure` })
+        : respond(store, endpoint, url)
+    if (request.method === 'GET') return response
+    return new Response(null, { status: response.status, headers: response.headers })
   }
 }

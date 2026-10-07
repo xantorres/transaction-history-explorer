@@ -26,7 +26,8 @@ function mockApi(simulateFaults: boolean): Plugin {
       res.writeHead(response.status, Object.fromEntries(response.headers))
       res.end(await response.text())
     }
-    respond().catch(() => {
+    respond().catch((reason: unknown) => {
+      if (!controller.signal.aborted) console.error(reason)
       res.statusCode = 500
       res.end()
     })

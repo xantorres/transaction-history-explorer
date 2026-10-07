@@ -1,6 +1,5 @@
 import {
   CURRENCIES,
-  SORTS,
   type Category,
   type Currency,
   type CurrencyTotals,
@@ -11,6 +10,7 @@ import {
   type Transaction,
 } from '../src/domain.ts'
 import { minorDigits, toMinorBound } from '../src/money.ts'
+import { EURO_RATES } from './data.ts'
 
 export interface Filters {
   q?: string
@@ -33,8 +33,6 @@ interface Entry {
 }
 
 type Key = 'date' | 'amount'
-
-const FACE_DIGITS = Math.max(...CURRENCIES.map(minorDigits))
 
 // Letters with no decomposition, so stripping combining marks never reaches them.
 const LETTERS: Partial<Record<string, string>> = {
@@ -74,15 +72,11 @@ function decodeCursor(cursor: string, query: string): [number, string] {
   } catch {
     value = null
   }
-  if (
-    Array.isArray(value) &&
-    typeof value[0] === 'number' &&
-    typeof value[1] === 'string' &&
-    value[2] === query
-  ) {
-    return [value[0], value[1]]
+  if (!Array.isArray(value) || typeof value[0] !== 'number' || typeof value[1] !== 'string') {
+    throw new CursorError('The cursor is malformed')
   }
-  throw new CursorError('The cursor does not belong to this query')
+  if (value[2] !== query) throw new CursorError('The cursor does not belong to this query')
+  return [value[0], value[1]]
 }
 
 function matcher(filters: Filters) {
@@ -118,7 +112,8 @@ export function createStore(rows: Transaction[]) {
   const entries: Entry[] = rows.map((row) => ({
     row,
     date: Date.parse(row.timestamp),
-    amount: row.amount * 10 ** (FACE_DIGITS - minorDigits(row.currency)),
+    // Ranks mixed currencies by worth, at the rates the amounts were generated with.
+    amount: row.amount / 10 ** minorDigits(row.currency) / EURO_RATES[row.currency],
     text: fold(`${row.counterparty}\n${row.description}\n${row.id}`),
   }))
   const byId = new Map(rows.map((row) => [row.id, row]))
@@ -126,19 +121,20 @@ export function createStore(rows: Transaction[]) {
   const compare = (key: Key, direction: number, entry: Entry, value: number, id: string) =>
     direction * (entry[key] - value || compareIds(entry.row.id, id))
 
-  const orders = new Map(
-    SORTS.map((sort) => {
-      const key: Key = sort.endsWith('date') ? 'date' : 'amount'
-      const direction = sort.startsWith('-') ? -1 : 1
-      const order = entries.toSorted((a, b) => compare(key, direction, a, b[key], b.row.id))
-      return [sort, { key, direction, order }]
-    }),
-  )
+  const plan = (key: Key, direction: number) => ({
+    key,
+    direction,
+    order: entries.toSorted((a, b) => compare(key, direction, a, b[key], b.row.id)),
+  })
+  const orders: Record<Sort, ReturnType<typeof plan>> = {
+    '-date': plan('date', -1),
+    date: plan('date', 1),
+    '-amount': plan('amount', -1),
+    amount: plan('amount', 1),
+  }
 
   function list(filters: Filters, sort: Sort, cursor: string | null, limit: number): Page {
-    const plan = orders.get(sort)
-    if (!plan) throw new RangeError(`Unknown sort ${sort}`)
-    const { key, direction, order } = plan
+    const { key, direction, order } = orders[sort]
     const { q, from, to, min, max, currency, status, category } = filters
     const query = fingerprint(
       JSON.stringify([q, from, to, min, max, currency, status, category, sort]),

@@ -74,6 +74,14 @@ describe('GET /api/transactions', () => {
     expect(response.status).toBe(400)
     expect(await response.json()).toMatchObject({ error: { code: 'invalid_cursor' } })
   })
+
+  test('rejects a malformed cursor', async () => {
+    const response = await get('/api/transactions?cursor=not-a-cursor')
+    expect(response.status).toBe(400)
+    expect(await response.json()).toEqual({
+      error: { code: 'invalid_cursor', message: 'The cursor is malformed', param: 'cursor' },
+    })
+  })
 })
 
 test('GET /api/summary totals the filtered result', async () => {
@@ -90,9 +98,25 @@ test('GET /api/transactions/:id returns one transaction or a 404', async () => {
   expect(await missing.json()).toMatchObject({ error: { code: 'not_found' } })
 })
 
+test('GET /api/transactions/:id reads a percent-encoded id', async () => {
+  const row = rows[42]
+  expect(await read(`/api/transactions/${String(row?.id).replace('_', '%5F')}`)).toEqual(row)
+  expect((await get('/api/transactions/%E0%A4%A')).status).toBe(404)
+})
+
 test('answers unknown routes and methods with errors', async () => {
   expect((await get('/api/accounts')).status).toBe(404)
-  expect((await get('/api/transactions', { method: 'POST' })).status).toBe(405)
+  expect((await get('/api/accounts', { method: 'POST' })).status).toBe(404)
+  const post = await get('/api/transactions', { method: 'POST' })
+  expect(post.status).toBe(405)
+  expect(post.headers.get('allow')).toBe('GET, HEAD')
+})
+
+test('answers HEAD like GET, without a body', async () => {
+  const response = await get('/api/summary', { method: 'HEAD' })
+  expect(response.status).toBe(200)
+  expect(response.headers.get('content-type')).toBe('application/json')
+  expect(await response.text()).toBe('')
 })
 
 test('fails the endpoints named in the faults cookie', async () => {
