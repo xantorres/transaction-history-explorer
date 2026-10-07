@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { formatMoney, minorDigits, toDecimal, toMinorBound } from './money'
+import { formatMoney, minorDigits, toDecimal, toMinorBound } from './money.ts'
 
 test('minor digits come from the currency definition', () => {
   expect(minorDigits('EUR')).toBe(2)

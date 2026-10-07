@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { zoneOffset } from './dates'
+import { zoneOffset } from './dates.ts'
 
 test('zoneOffset follows daylight saving transitions', () => {
   expect(zoneOffset('Europe/London', Date.parse('2026-03-29T00:59:00Z'))).toBe(0)

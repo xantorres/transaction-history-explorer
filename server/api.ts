@@ -1,5 +1,5 @@
-import { CATEGORIES, CURRENCIES, SORTS, STATUSES, type ApiErrorBody } from '../src/domain'
-import { CursorError, type Filters, type Store } from './store'
+import { CATEGORIES, CURRENCIES, SORTS, STATUSES, type ApiErrorBody } from '../src/domain.ts'
+import { CursorError, type Filters, type Store } from './store.ts'
 
 interface ApiOptions {
   store: Store

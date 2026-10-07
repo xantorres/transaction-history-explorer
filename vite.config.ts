@@ -1,9 +1,9 @@
 import react from '@vitejs/plugin-react'
 import type { Connect, Plugin, ViteDevServer } from 'vite'
 import { defineConfig } from 'vitest/config'
-import { createApi } from './server/api'
-import { generateTransactions } from './server/data'
-import { createStore } from './server/store'
+import { createApi } from './server/api.ts'
+import { generateTransactions } from './server/data.ts'
+import { createStore } from './server/store.ts'
 
 function mockApi(): Plugin {
   let api: ReturnType<typeof createApi> | undefined

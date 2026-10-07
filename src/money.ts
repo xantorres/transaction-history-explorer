@@ -1,4 +1,4 @@
-import { CURRENCIES, type Currency } from './domain'
+import { CURRENCIES, type Currency } from './domain.ts'
 
 const DIGITS = Object.fromEntries(
   CURRENCIES.map((currency) => {

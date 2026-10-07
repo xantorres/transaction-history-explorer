@@ -1,5 +1,5 @@
-import type { Category, Currency, Status, Transaction } from '../src/domain'
-import { zoneOffset } from '../src/dates'
+import type { Category, Currency, Status, Transaction } from '../src/domain.ts'
+import { zoneOffset } from '../src/dates.ts'
 
 export const DATA_START = Date.UTC(2024, 9, 1)
 export const DATA_END = Date.UTC(2026, 9, 1)

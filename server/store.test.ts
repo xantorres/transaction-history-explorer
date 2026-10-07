@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import type { Sort, Transaction } from '../src/domain'
-import { generateTransactions } from './data'
-import { CursorError, createStore, type Filters } from './store'
+import type { Sort, Transaction } from '../src/domain.ts'
+import { generateTransactions } from './data.ts'
+import { CursorError, createStore, type Filters } from './store.ts'
 
 let sequence = 0
 const tx = (fields: Partial<Transaction>): Transaction => ({

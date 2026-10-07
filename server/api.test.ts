@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest'
-import type { Page, Summary } from '../src/domain'
-import { createApi } from './api'
-import { generateTransactions } from './data'
-import { createStore } from './store'
+import type { Page, Summary } from '../src/domain.ts'
+import { createApi } from './api.ts'
+import { generateTransactions } from './data.ts'
+import { createStore } from './store.ts'
 
 const rows = generateTransactions(300)
 const api = createApi({ store: createStore(rows), latency: () => 0 })

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { CATEGORIES, CURRENCIES, STATUSES } from '../src/domain'
-import { DATA_END, DATA_START, generateTransactions } from './data'
+import { CATEGORIES, CURRENCIES, STATUSES } from '../src/domain.ts'
+import { DATA_END, DATA_START, generateTransactions } from './data.ts'
 
 const rows = generateTransactions(5_000)
 

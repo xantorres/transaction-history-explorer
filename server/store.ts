@@ -9,8 +9,8 @@ import {
   type Status,
   type Summary,
   type Transaction,
-} from '../src/domain'
-import { minorDigits, toMinorBound } from '../src/money'
+} from '../src/domain.ts'
+import { minorDigits, toMinorBound } from '../src/money.ts'
 
 export interface Filters {
   q?: string
