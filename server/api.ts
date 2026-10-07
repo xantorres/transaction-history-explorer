@@ -5,6 +5,7 @@ import { CursorError, type Filters, type Store } from './store.ts'
 interface ApiOptions {
   store: Store
   latency?: () => number
+  simulateFaults?: boolean
 }
 
 const UTC_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/
@@ -117,7 +118,11 @@ function respond(store: Store, endpoint: Endpoint, url: URL) {
   }
 }
 
-export function createApi({ store, latency = () => 200 + Math.random() * 600 }: ApiOptions) {
+export function createApi({
+  store,
+  latency = () => 200 + Math.random() * 600,
+  simulateFaults = false,
+}: ApiOptions) {
   return async (request: Request): Promise<Response> => {
     await sleep(latency(), request.signal)
     if (request.method !== 'GET') {
@@ -126,7 +131,7 @@ export function createApi({ store, latency = () => 200 + Math.random() * 600 }: 
     const url = new URL(request.url)
     const endpoint = endpointOf(url)
     if (!endpoint) return error(404, { code: 'not_found', message: 'No such endpoint' })
-    if (faults(request).has(endpoint)) {
+    if (simulateFaults && faults(request).has(endpoint)) {
       return error(500, { code: 'injected_fault', message: `Simulated ${endpoint} failure` })
     }
     return respond(store, endpoint, url)

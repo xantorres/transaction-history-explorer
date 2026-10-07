@@ -5,9 +5,10 @@ import { createApi } from './server/api.ts'
 import { generateTransactions } from './server/data.ts'
 import { createStore } from './server/store.ts'
 
-function mockApi(): Plugin {
+function mockApi(simulateFaults: boolean): Plugin {
   let api: ReturnType<typeof createApi> | undefined
-  const load = () => (api ??= createApi({ store: createStore(generateTransactions(100_000)) }))
+  const load = () =>
+    (api ??= createApi({ store: createStore(generateTransactions(100_000)), simulateFaults }))
 
   const serve: Connect.NextHandleFunction = (req, res) => {
     const controller = new AbortController()
@@ -38,8 +39,8 @@ function mockApi(): Plugin {
   return { name: 'mock-api', configureServer: mount, configurePreviewServer: mount }
 }
 
-export default defineConfig({
-  plugins: [react(), mockApi()],
+export default defineConfig(({ isPreview }) => ({
+  plugins: [react(), mockApi(!isPreview)],
   test: {
     include: ['{src,server}/**/*.test.{ts,tsx}'],
     environment: 'jsdom',
@@ -48,4 +49,4 @@ export default defineConfig({
     unstubGlobals: true,
     restoreMocks: true,
   },
-})
+}))

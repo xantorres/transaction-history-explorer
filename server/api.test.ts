@@ -5,7 +5,7 @@ import { generateTransactions } from './data.ts'
 import { createStore } from './store.ts'
 
 const rows = generateTransactions(300)
-const api = createApi({ store: createStore(rows), latency: () => 0 })
+const api = createApi({ store: createStore(rows), latency: () => 0, simulateFaults: true })
 
 const get = (path: string, init?: RequestInit) => api(new Request(`http://localhost${path}`, init))
 
@@ -87,6 +87,14 @@ test('fails the endpoints named in the faults cookie', async () => {
   expect(next.status).toBe(500)
   expect((await get('/api/summary', { headers })).status).toBe(500)
   expect((await get(`/api/transactions/${String(rows[0]?.id)}`, { headers })).status).toBe(200)
+})
+
+test('ignores the faults cookie unless faults are simulated', async () => {
+  const production = createApi({ store: createStore(rows), latency: () => 0 })
+  const request = new Request('http://localhost/api/summary', {
+    headers: { cookie: 'faults=summary' },
+  })
+  expect((await production(request)).status).toBe(200)
 })
 
 test('waits for its latency and gives up when the request is aborted', async () => {
