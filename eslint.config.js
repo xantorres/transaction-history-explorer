@@ -16,4 +16,8 @@ export default defineConfig(globalIgnores(['dist', 'playwright-report', 'test-re
       tsconfigRootDir: import.meta.dirname,
     },
   },
+  rules: {
+    // Only matters under React Compiler, which this app does not use.
+    'react-hooks/incompatible-library': 'off',
+  },
 })

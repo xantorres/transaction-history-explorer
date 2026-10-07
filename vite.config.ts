@@ -44,5 +44,6 @@ export default defineConfig({
     environment: 'jsdom',
     env: { TZ: 'America/New_York' },
     setupFiles: ['src/test/setup.ts'],
+    unstubGlobals: true,
   },
 })

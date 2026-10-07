@@ -43,3 +43,10 @@ export function canonicalZone(timeZone: string) {
 }
 
 export const viewerZone = new Intl.DateTimeFormat().resolvedOptions().timeZone
+
+const dateTime = new Intl.DateTimeFormat(navigator.language, {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+})
+
+export const formatDateTime = (iso: string) => dateTime.format(Date.parse(iso))
