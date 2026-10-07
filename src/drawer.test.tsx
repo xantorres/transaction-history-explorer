@@ -164,9 +164,11 @@ test('a failed detail request can be retried', async () => {
   installApi()
   document.cookie = 'faults=detail'
   renderApp(`?tx=${String(unloaded?.id)}`)
-  await within(drawer()).findByText("Couldn't load this transaction.")
+  const failure = await within(drawer()).findByRole('alert')
+  expect(failure.textContent).toBe("Couldn't load this transaction.")
   document.cookie = 'faults=; max-age=0'
   fireEvent.click(within(drawer()).getByRole('button', { name: 'Retry' }))
+  expect(document.activeElement).toBe(within(drawer()).getByRole('heading'))
   await waitFor(() => {
     expect(drawerFor(unloaded?.counterparty)).toBeDefined()
   })

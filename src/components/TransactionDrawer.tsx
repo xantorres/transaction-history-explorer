@@ -50,13 +50,14 @@ export function TransactionDrawer({ id }: { id?: string }) {
 
 function Details({ id }: { id: string }) {
   const client = useQueryClient()
+  const heading = useRef<HTMLHeadingElement>(null)
   const { data, error, isFetching, refetch } = useQuery(transactionQuery(id, client))
   const missing = error instanceof ApiError && error.status === 404
 
   return (
     <div className="drawer-body" data-status={data?.status}>
       <header className="drawer-head">
-        <h2 id="drawer-title">
+        <h2 ref={heading} id="drawer-title" tabIndex={-1}>
           {data?.counterparty ?? (missing ? 'Transaction not found' : 'Transaction')}
         </h2>
         <button type="button" className="close" aria-label="Close" onClick={closeTransaction}>
@@ -69,11 +70,12 @@ function Details({ id }: { id: string }) {
         <p>There is no transaction with this ID. The link may be mistyped or out of date.</p>
       ) : error ? (
         <p className="drawer-error">
-          Couldn't load this transaction.
+          <span role="alert">Couldn't load this transaction.</span>
           <button
             type="button"
             disabled={isFetching}
             onClick={() => {
+              heading.current?.focus()
               void refetch()
             }}
           >

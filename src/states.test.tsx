@@ -14,6 +14,7 @@ test('offers a way out of an empty result', async () => {
 
   fireEvent.click(table().getByRole('button', { name: 'Clear filters' }))
   expect(location.search).toBe('?sort=amount')
+  expect(document.activeElement).toBe(screen.getByRole('table'))
   await waitForRows()
   expect(table().queryByText('No transactions match these filters.')).toBeNull()
 })
@@ -22,11 +23,12 @@ test('a failed list can be retried in place', async () => {
   installApi()
   document.cookie = 'faults=list'
   renderApp()
-  await table().findByText("Couldn't load transactions.")
+  expect((await table().findByRole('alert')).textContent).toBe("Couldn't load transactions.")
   expect(table().queryByText('No transactions match these filters.')).toBeNull()
 
   document.cookie = 'faults=; max-age=0'
   fireEvent.click(table().getByRole('button', { name: 'Retry' }))
+  expect(document.activeElement).toBe(screen.getByRole('table'))
   await waitForRows()
   expect(table().queryByText("Couldn't load transactions.")).toBeNull()
 })
@@ -39,7 +41,9 @@ test('a failed next page keeps the loaded rows and retries inline', async () => 
   const [, body] = screen.getAllByRole('rowgroup')
   const pages = () => api.requests.filter(({ url }) => url.searchParams.has('cursor')).length
   fireEvent.scroll(body as HTMLElement, { target: { scrollTop: 90 * ROW_HEIGHT } })
-  await table().findByText("Couldn't load more.")
+  const failure = await table().findByRole('alert')
+  expect(failure.textContent).toBe("Couldn't load more.")
+  expect(failure.closest('[role=row]')?.hasAttribute('aria-rowindex')).toBe(false)
   expect(rowAt(101)).toBeDefined()
   const failed = pages()
 
@@ -50,9 +54,22 @@ test('a failed next page keeps the loaded rows and retries inline', async () => 
 
   document.cookie = 'faults=; max-age=0'
   fireEvent.click(table().getByRole('button', { name: 'Retry' }))
+  expect(document.activeElement).toBe(within(rowAt(101) as HTMLElement).getByRole('link'))
   await waitFor(() => {
     expect(hrefAt(102)).toBeTruthy()
   })
+})
+
+test.each([
+  ['nothing matches', '?q=no-such-counterparty', '', '0'],
+  ['the list fails', '', 'list', '1,000'],
+])('when %s the table claims no row count', async (_, search, faults, count) => {
+  installApi()
+  document.cookie = `faults=${faults}`
+  renderApp(search)
+  await within(screen.getByRole('region', { name: 'Summary' })).findByText(count)
+  await table().findByRole('cell')
+  expect(screen.getByRole('table').getAttribute('aria-rowcount')).toBe('-1')
 })
 
 test('the development panel simulates failures until switched off', async () => {

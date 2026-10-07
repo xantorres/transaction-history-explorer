@@ -19,6 +19,7 @@ interface TransactionTableProps {
 }
 
 export function TransactionTable({ view, filters, total }: TransactionTableProps) {
+  const table = useRef<HTMLDivElement>(null)
   const scroller = useRef<HTMLDivElement>(null)
   const {
     data,
@@ -61,12 +62,14 @@ export function TransactionTable({ view, filters, total }: TransactionTableProps
 
   return (
     <div
+      ref={table}
       className="table"
       role="table"
       aria-label="Transactions"
-      aria-rowcount={total === undefined ? -1 : total + 1}
+      aria-rowcount={total === undefined || rows.length === 0 ? -1 : total + 1}
       aria-busy={isFetching}
       data-stale={isPlaceholderData || undefined}
+      tabIndex={-1}
     >
       <div className="progress" hidden={!isFetching || isFetchingNextPage} />
       <div role="rowgroup" className="table-head">
@@ -103,15 +106,23 @@ export function TransactionTable({ view, filters, total }: TransactionTableProps
                 style={style}
               />
             ) : (
-              <div key="more" role="row" aria-rowindex={index + 2} className="row" style={style}>
+              <div key="more" role="row" className="row" style={style}>
                 <div role="cell" className="more">
                   {isFetchNextPageError ? (
                     <>
-                      Couldn't load more.
+                      <span role="alert">Couldn't load more.</span>
                       <button
                         type="button"
                         disabled={isFetchingNextPage}
-                        onClick={() => void fetchNextPage()}
+                        onClick={() => {
+                          // This row gives way to new ones, so focus waits on the last loaded row.
+                          scroller.current
+                            ?.querySelector<HTMLElement>(
+                              `[aria-rowindex="${String(rows.length + 1)}"] a`,
+                            )
+                            ?.focus()
+                          void fetchNextPage()
+                        }}
                       >
                         Retry
                       </button>
@@ -127,8 +138,15 @@ export function TransactionTable({ view, filters, total }: TransactionTableProps
         {isPending && <Skeleton />}
         {isError && !data && (
           <Notice>
-            Couldn't load transactions.
-            <button type="button" disabled={isFetching} onClick={() => void refetch()}>
+            <span role="alert">Couldn't load transactions.</span>
+            <button
+              type="button"
+              disabled={isFetching}
+              onClick={() => {
+                table.current?.focus()
+                void refetch()
+              }}
+            >
               Retry
             </button>
           </Notice>
@@ -139,6 +157,7 @@ export function TransactionTable({ view, filters, total }: TransactionTableProps
             <button
               type="button"
               onClick={() => {
+                table.current?.focus()
                 clearFilters(view)
               }}
             >

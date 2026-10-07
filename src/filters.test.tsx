@@ -340,16 +340,28 @@ test('flags a range whose ends are the wrong way round', () => {
   }
 })
 
+test('Clear filters does nothing while no filter applies', () => {
+  installApi()
+  renderApp('?sort=amount')
+  const clear = screen.getByRole('button', { name: 'Clear filters' })
+  expect(clear.getAttribute('aria-disabled')).toBe('true')
+  fireEvent.change(field('Min amount'), { target: { value: 'abc' } })
+  fireEvent.click(clear)
+  fireEvent.change(field('Currency'), { target: { value: 'EUR' } })
+  expect(field('Min amount').value).toBe('abc')
+})
+
 test('clearing filters keeps the sort order and Back restores the filters', async () => {
   installApi()
   renderApp('?q=kestrel&currency=EUR&sort=amount')
-  fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+  const clear = screen.getByRole<HTMLButtonElement>('button', { name: 'Clear filters' })
+  fireEvent.click(clear)
   expect(location.search).toBe('?sort=amount')
   expect(field('Search').value).toBe('')
   expect(field('Currency').value).toBe('')
-  expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Clear filters' }).disabled).toBe(
-    true,
-  )
+  expect(clear.getAttribute('aria-disabled')).toBe('true')
+  // A disabled button would drop keyboard focus to the page.
+  expect(clear.disabled).toBe(false)
 
   act(() => {
     history.back()

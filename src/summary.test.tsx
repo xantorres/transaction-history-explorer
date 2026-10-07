@@ -39,10 +39,26 @@ test('keeps the table usable when only the summary fails', async () => {
   document.cookie = 'faults=summary'
   renderApp()
   await waitForRows()
-  await summary().findByText("Couldn't load totals.")
+  expect((await summary().findByRole('alert')).textContent).toBe("Couldn't load totals.")
   expect(screen.getByRole('table').getAttribute('aria-rowcount')).toBe('-1')
 
   document.cookie = 'faults=; max-age=0'
   fireEvent.click(summary().getByRole('button', { name: 'Retry' }))
+  expect(document.activeElement).toBe(screen.getByRole('region', { name: 'Summary' }))
   await summary().findByText('1,000')
+})
+
+test('announces a new match count together with its label', async () => {
+  installApi()
+  renderApp()
+  const live = (await summary().findByText('1,000')).closest('[aria-live]') as HTMLElement
+  expect(live.getAttribute('aria-live')).toBe('polite')
+  expect(live.getAttribute('aria-atomic')).toBe('true')
+  expect(within(live).getByText('Transactions')).toBeDefined()
+})
+
+test('a keyboard can reach the totals to scroll them on a narrow screen', () => {
+  installApi()
+  renderApp()
+  expect(screen.getByRole('region', { name: 'Summary' }).tabIndex).toBe(0)
 })

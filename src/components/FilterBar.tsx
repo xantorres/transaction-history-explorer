@@ -20,6 +20,7 @@ export function FilterBar({ view }: { view: View }) {
   const [chosen, setChosen] = useState<{ param: string; value: string }>()
   const { q, from, to, min, max, currency, status, category } = view
   const filterCount = [from, to, min, max, currency, status, category].filter(Boolean).length
+  const unfiltered = !q && filterCount === 0
   const datesInverted = from !== undefined && to !== undefined && from > to
   const amountsInverted = min !== undefined && max !== undefined && Number(min) > Number(max)
 
@@ -130,9 +131,10 @@ export function FilterBar({ view }: { view: View }) {
       </label>
       <button
         type="button"
-        disabled={!q && filterCount === 0}
+        // Disabled, it would drop the focus of whoever just pressed it.
+        aria-disabled={unfiltered || undefined}
         onClick={() => {
-          clearFilters(view)
+          if (!unfiltered) clearFilters(view)
         }}
       >
         Clear filters
