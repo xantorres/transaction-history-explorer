@@ -93,7 +93,7 @@ export function useView() {
   return useMemo(() => decodeView(search, viewerZone), [search])
 }
 
-export function navigate(search: string, mode: 'push' | 'replace', state?: unknown) {
+function navigate(search: string, mode: 'push' | 'replace', state?: unknown) {
   if (search === location.search) return
   const url = new URL(location.href)
   url.search = search
@@ -115,11 +115,11 @@ export function updateView(
   navigate(encodeView(decodeView(params.toString(), viewerZone)), mode, state)
 }
 
-export const clearFilters = ({ tz, sort }: View) => {
+export function clearFilters({ tz, sort }: View) {
   navigate(encodeView({ tz, sort }), 'push')
 }
 
-export const openTransaction = (tx: string) => {
+export function openTransaction(tx: string) {
   updateView({ tx }, 'push', { drawer: true })
 }
 
@@ -142,6 +142,6 @@ export function closeTransaction() {
   }
 }
 
-export const canonicalizeUrl = () => {
+export function canonicalizeUrl() {
   navigate(encodeView(decodeView(location.search, viewerZone)), 'replace')
 }

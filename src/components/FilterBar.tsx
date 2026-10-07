@@ -15,7 +15,7 @@ function parseAmount(draft: string) {
 export function FilterBar({ view }: { view: View }) {
   const [open, setOpen] = useState(false)
   const { q, from, to, min, max, currency, status, category } = view
-  const collapsed = [from, to, min, max, currency, status, category].filter(Boolean).length
+  const filterCount = [from, to, min, max, currency, status, category].filter(Boolean).length
 
   const text = (param: 'q' | 'from' | 'to' | 'min' | 'max') => ({
     value: view[param] ?? '',
@@ -46,7 +46,7 @@ export function FilterBar({ view }: { view: View }) {
           setOpen(!open)
         }}
       >
-        Filters{collapsed > 0 && ` (${String(collapsed)})`}
+        Filters{filterCount > 0 && ` (${String(filterCount)})`}
       </button>
       <DebouncedInput label="From" type="date" max={to} {...text('from')} />
       <DebouncedInput label="To" type="date" min={from} {...text('to')} />
@@ -95,14 +95,14 @@ export function FilterBar({ view }: { view: View }) {
       </label>
       <button
         type="button"
-        disabled={!q && collapsed === 0}
+        disabled={!q && filterCount === 0}
         onClick={() => {
           clearFilters(view)
         }}
       >
         Clear filters
       </button>
-      {(from || to) && view.tz !== viewerZone && (
+      {view.tz !== viewerZone && (
         <p role="note" className="zone-note">
           Dates are days in {view.tz} time
         </p>

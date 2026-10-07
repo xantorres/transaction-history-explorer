@@ -18,9 +18,8 @@ interface Job {
 
 const count = (value: number) => value.toLocaleString(navigator.language)
 
-function describe({ rows, total }: Job) {
-  return total === undefined ? `${count(rows)} rows` : `${count(rows)} of ${count(total)} rows`
-}
+const describe = ({ rows, total }: Job) =>
+  total === undefined ? `${count(rows)} rows` : `${count(rows)} of ${count(total)} rows`
 
 export function ExportButton({ filters, sort, total }: ExportButtonProps) {
   const [job, setJob] = useState<Job>()
