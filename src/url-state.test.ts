@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, test } from 'vitest'
-import { decodeView, encodeView, updateView, useView } from './url-state.ts'
+import { canonicalizeUrl, decodeView, encodeView, updateView, useView } from './url-state.ts'
 
 const VIEWER = 'America/New_York'
 const canonical = (search: string) => encodeView(decodeView(search, VIEWER))
@@ -84,6 +84,12 @@ describe('view store', () => {
     updateView({ q: 'rent', status: 'BOOKED' }, 'replace')
     updateView({ q: '', status: undefined }, 'replace')
     expect(location.search).toBe('')
+  })
+
+  test('keeps a path that starts with two slashes on this origin', () => {
+    history.replaceState(null, '', `${location.origin}//x/?currency=XAU#top`)
+    canonicalizeUrl()
+    expect(location.href).toBe(`${location.origin}//x/#top`)
   })
 
   test('follows back and forward', async () => {

@@ -95,7 +95,8 @@ export function useView() {
 
 export function navigate(search: string, mode: 'push' | 'replace', state?: unknown) {
   if (search === location.search) return
-  const url = location.pathname + search
+  const url = new URL(location.href)
+  url.search = search
   if (mode === 'push') history.pushState(state, '', url)
   else history.replaceState(history.state, '', url)
   for (const listener of listeners) listener()
