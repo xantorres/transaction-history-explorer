@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
 import { summaryQuery, toFilters } from './api.ts'
+import { DevFaults } from './components/DevFaults.tsx'
 import { ExportButton } from './components/ExportButton.tsx'
 import { FilterBar } from './components/FilterBar.tsx'
 import { SummaryBar } from './components/SummaryBar.tsx'
@@ -28,6 +29,7 @@ export function App() {
       <SummaryBar summary={summary} />
       <TransactionTable view={view} filters={filters} total={summary.data?.count} />
       <TransactionDrawer id={view.tx} />
+      {import.meta.env.DEV && <DevFaults />}
     </main>
   )
 }

@@ -51,3 +51,18 @@ test('a failed next page keeps the loaded rows and retries inline', async () => 
     expect(hrefAt(102)).toBeTruthy()
   })
 })
+
+test('the development panel simulates failures until switched off', async () => {
+  installApi()
+  renderApp()
+  await waitForRows()
+  const summary = within(screen.getByRole('region', { name: 'Summary' }))
+
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Summary' }))
+  expect(document.cookie).toBe('faults=summary')
+  await summary.findByText("Couldn't load totals.")
+  await waitForRows()
+
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Summary' }))
+  await summary.findByText('1,000')
+})
