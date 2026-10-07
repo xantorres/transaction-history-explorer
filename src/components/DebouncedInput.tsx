@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { InputHTMLAttributes } from 'react'
 
 const DEBOUNCE_MS = 300
@@ -10,6 +10,8 @@ interface DebouncedInputProps extends Omit<
   label: string
   value: string
   parse?: (draft: string) => string
+  invalidMessage?: string
+  error?: string
   onCommit: (value: string, mode: 'push' | 'replace') => void
 }
 
@@ -19,51 +21,66 @@ export function DebouncedInput({
   label,
   value,
   parse = trim,
+  invalidMessage,
+  error,
   onCommit,
   ...props
 }: DebouncedInputProps) {
   const [draft, setDraft] = useState(value)
   const [synced, setSynced] = useState(value)
+  // A half-typed date reads as '', so only the browser can tell it from a cleared field.
+  const [incomplete, setIncomplete] = useState(false)
+  const input = useRef<HTMLInputElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const committed = useRef<string>(undefined)
+  const id = useId()
+
+  const invalid = (text: string) => text.trim() !== '' && parse(text) === ''
 
   // Only an outside change (history, Clear filters) rewrites what the user typed.
   if (value !== synced) {
     setSynced(value)
-    if (value !== parse(draft)) setDraft(value)
+    setIncomplete(false)
+    if (parse(draft) !== value || invalid(draft)) setDraft(value)
   }
 
   useEffect(() => {
     // Back or Forward moved off this burst's entry, so the next commit pushes a new one.
     if (value !== committed.current) committed.current = undefined
+    if (input.current?.validity.badInput) input.current.value = value
     return () => {
       clearTimeout(timer.current)
     }
   }, [value])
 
-  const invalid = (text: string) => text.trim() !== '' && parse(text) === ''
-
   function commit(next: string) {
     clearTimeout(timer.current)
     const parsed = parse(next)
-    if (parsed === value || invalid(next)) return
+    if (parsed === value || invalid(next) || input.current?.validity.badInput) return
     onCommit(parsed, committed.current === undefined ? 'push' : 'replace')
     committed.current = parsed
   }
 
+  const unusable = invalid(draft) || incomplete
+  const message = unusable ? invalidMessage : error
+
   return (
-    <label className="field">
-      <span>{label}</span>
+    <div className="field">
+      <label htmlFor={id}>{label}</label>
       <input
         {...props}
+        ref={input}
+        id={id}
         value={draft}
-        aria-invalid={invalid(draft) || undefined}
+        aria-invalid={unusable || error !== undefined || undefined}
+        aria-describedby={message && `${id}-message`}
         onFocus={() => {
           committed.current = undefined
         }}
         onChange={(event) => {
           const next = event.target.value
           setDraft(next)
+          setIncomplete(event.target.validity.badInput)
           clearTimeout(timer.current)
           timer.current = setTimeout(() => {
             commit(next)
@@ -76,6 +93,11 @@ export function DebouncedInput({
           if (event.key === 'Enter') commit(draft)
         }}
       />
-    </label>
+      {message && (
+        <p id={`${id}-message`} className="field-error">
+          {message}
+        </p>
+      )}
+    </div>
   )
 }

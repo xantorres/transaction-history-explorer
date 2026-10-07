@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { viewerZone } from '../dates.ts'
 import { CATEGORIES, CURRENCIES, STATUS_LABELS, STATUSES } from '../domain.ts'
 import { DECIMAL } from '../money.ts'
-import { clearFilters, updateView } from '../url-state.ts'
+import { clearFilters, updateView, useClears } from '../url-state.ts'
 import type { View } from '../url-state.ts'
 import { DebouncedInput } from './DebouncedInput.tsx'
+
+const LAST_DAY = '9999-12-31'
 
 function parseAmount(draft: string) {
   const value = draft.trim().replace(',', '.')
@@ -14,8 +16,11 @@ function parseAmount(draft: string) {
 
 export function FilterBar({ view }: { view: View }) {
   const [open, setOpen] = useState(false)
+  const clears = useClears()
   const { q, from, to, min, max, currency, status, category } = view
   const filterCount = [from, to, min, max, currency, status, category].filter(Boolean).length
+  const datesInverted = from !== undefined && to !== undefined && from > to
+  const amountsInverted = min !== undefined && max !== undefined && Number(min) > Number(max)
 
   const text = (param: 'q' | 'from' | 'to' | 'min' | 'max') => ({
     value: view[param] ?? '',
@@ -48,22 +53,44 @@ export function FilterBar({ view }: { view: View }) {
       >
         Filters{filterCount > 0 && ` (${String(filterCount)})`}
       </button>
-      <DebouncedInput label="From" type="date" max={to} {...text('from')} />
-      <DebouncedInput label="To" type="date" min={from} {...text('to')} />
-      <DebouncedInput
-        label="Min amount"
-        inputMode="decimal"
-        placeholder="0.00"
-        parse={parseAmount}
-        {...text('min')}
-      />
-      <DebouncedInput
-        label="Max amount"
-        inputMode="decimal"
-        placeholder="0.00"
-        parse={parseAmount}
-        {...text('max')}
-      />
+      {/* Clear filters remounts these, so a draft that never applied goes as well. */}
+      <Fragment key={clears}>
+        <DebouncedInput
+          label="From"
+          type="date"
+          max={to ?? LAST_DAY}
+          invalidMessage="Incomplete date"
+          error={datesInverted ? 'Later than To' : undefined}
+          {...text('from')}
+        />
+        <DebouncedInput
+          label="To"
+          type="date"
+          min={from}
+          max={LAST_DAY}
+          invalidMessage="Incomplete date"
+          error={datesInverted ? 'Earlier than From' : undefined}
+          {...text('to')}
+        />
+        <DebouncedInput
+          label="Min amount"
+          inputMode="decimal"
+          placeholder="0.00"
+          parse={parseAmount}
+          invalidMessage="Not a number"
+          error={amountsInverted ? 'More than Max' : undefined}
+          {...text('min')}
+        />
+        <DebouncedInput
+          label="Max amount"
+          inputMode="decimal"
+          placeholder="0.00"
+          parse={parseAmount}
+          invalidMessage="Not a number"
+          error={amountsInverted ? 'Less than Min' : undefined}
+          {...text('max')}
+        />
+      </Fragment>
       <label className="field">
         <span>Currency</span>
         <select {...choice('currency')}>

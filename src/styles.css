@@ -121,12 +121,18 @@ button:disabled {
   gap: 10px 12px;
 }
 
+.filters:has(.field-error) {
+  row-gap: 1.5rem;
+  padding-bottom: 1.25rem;
+}
+
 .field {
+  position: relative;
   display: grid;
   gap: 4px;
 }
 
-.field > span,
+.field > :is(label, span),
 .stat dt,
 .facts dt,
 .table-head {
@@ -169,6 +175,15 @@ button:disabled {
 
 .filters [aria-invalid='true'] {
   border-color: var(--negative);
+}
+
+.field-error {
+  position: absolute;
+  top: 100%;
+  margin: 2px 0 0;
+  color: var(--negative);
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 .filters-toggle {
@@ -660,6 +675,11 @@ button:disabled {
 
   .filters:not([data-open]) > :not(:first-child, .filters-toggle, .zone-note) {
     display: none;
+  }
+
+  .filters:not([data-open]):has(.field-error) {
+    row-gap: 8px;
+    padding-bottom: 0;
   }
 
   .filters > :is(.field:not(:first-child), button:not(.filters-toggle)) {

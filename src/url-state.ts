@@ -115,9 +115,14 @@ export function updateView(
   navigate(encodeView(decodeView(params.toString(), viewerZone)), mode, state)
 }
 
+let clears = 0
+
 export function clearFilters({ tz, sort }: View) {
+  clears++
   navigate(encodeView({ tz, sort }), 'push')
 }
+
+export const useClears = () => useSyncExternalStore(subscribe, () => clears)
 
 export function openTransaction(tx: string) {
   updateView({ tx }, 'push', { drawer: true })

@@ -6,6 +6,11 @@ import { field, fill, hrefAt, renderApp, waitForRows } from './test/app.tsx'
 const firstId = (filters: Parameters<typeof store.list>[0]) =>
   store.list(filters, '-date', null, 100).items[0]?.id
 
+const problem = (label: string) => {
+  const id = field(label).getAttribute('aria-describedby')
+  return id ? document.getElementById(id)?.textContent : undefined
+}
+
 const advance = (ms: number) => {
   act(() => {
     vi.advanceTimersByTime(ms)
@@ -202,6 +207,8 @@ test('date filters send the viewer calendar days as UTC instants', async () => {
 test('the last day of the calendar can end the range', async () => {
   const api = installApi()
   renderApp('?to=9999-12-31')
+  expect(field('From').getAttribute('max')).toBe('9999-12-31')
+  expect(field('To').getAttribute('max')).toBe('9999-12-31')
   await waitForRows()
   expect(api.requests.at(-1)?.url.searchParams.get('to')).toBe('+010000-01-01T05:00:00.000Z')
 })
@@ -215,6 +222,7 @@ test('amount filters accept a decimal comma and flag garbage', () => {
   fill('Max amount', '12.5.5')
   expect(location.search).toBe('?min=12.5')
   expect(field('Max amount').getAttribute('aria-invalid')).toBe('true')
+  expect(problem('Max amount')).toBe('Not a number')
 })
 
 test('garbage in an amount keeps the bound already applied', () => {
@@ -223,6 +231,72 @@ test('garbage in an amount keeps the bound already applied', () => {
   fill('Min amount', '10x')
   expect(location.search).toBe('?min=10')
   expect(field('Min amount').getAttribute('aria-invalid')).toBe('true')
+  fill('Min amount', '12')
+  expect(location.search).toBe('?min=12')
+  expect(field('Min amount').getAttribute('aria-invalid')).toBeNull()
+  expect(problem('Min amount')).toBeUndefined()
+})
+
+test('Clear filters also wipes amounts that could not apply', () => {
+  installApi()
+  renderApp('?min=10&currency=EUR')
+  fill('Min amount', '10x')
+  fill('Max amount', 'abc')
+  fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+  expect(location.search).toBe('')
+  for (const label of ['Min amount', 'Max amount']) {
+    expect(field(label).value).toBe('')
+    expect(field(label).getAttribute('aria-invalid')).toBeNull()
+  }
+})
+
+test('Back replaces an amount that could not apply', async () => {
+  installApi()
+  renderApp()
+  fill('Min amount', '10')
+  fill('Min amount', '10x')
+  act(() => {
+    history.back()
+  })
+  await waitFor(() => {
+    expect(location.search).toBe('')
+  })
+  expect(field('Min amount').value).toBe('')
+  expect(field('Min amount').getAttribute('aria-invalid')).toBeNull()
+})
+
+test('a half-typed date keeps the day already applied until history moves on', async () => {
+  installApi()
+  renderApp()
+  fill('From', '2026-03-01')
+  const applied = location.search
+  Object.defineProperty(field('From'), 'validity', { value: { badInput: true } })
+  fill('From', '')
+  expect(location.search).toBe(applied)
+  expect(field('From').getAttribute('aria-invalid')).toBe('true')
+  expect(problem('From')).toBe('Incomplete date')
+
+  act(() => {
+    history.back()
+  })
+  await waitFor(() => {
+    expect(location.search).toBe('')
+  })
+  expect(field('From').getAttribute('aria-invalid')).toBeNull()
+})
+
+test('flags a range whose ends are the wrong way round', () => {
+  installApi()
+  renderApp('?from=2026-03-10&to=2026-03-01&min=50&max=20')
+  expect(problem('From')).toBe('Later than To')
+  expect(problem('To')).toBe('Earlier than From')
+  expect(problem('Min amount')).toBe('More than Max')
+  expect(problem('Max amount')).toBe('Less than Min')
+  fill('To', '2026-03-31')
+  fill('Max amount', '50')
+  for (const label of ['From', 'To', 'Min amount', 'Max amount']) {
+    expect(field(label).getAttribute('aria-invalid')).toBeNull()
+  }
 })
 
 test('clearing filters keeps the sort order and Back restores the filters', async () => {
