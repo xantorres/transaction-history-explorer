@@ -53,6 +53,18 @@ function Details({ id }: { id: string }) {
   const heading = useRef<HTMLHeadingElement>(null)
   const { data, error, isFetching, refetch } = useQuery(transactionQuery(id, client))
   const missing = error instanceof ApiError && error.status === 404
+  const retry = (
+    <button
+      type="button"
+      disabled={isFetching}
+      onClick={() => {
+        heading.current?.focus()
+        void refetch()
+      }}
+    >
+      Retry
+    </button>
+  )
 
   return (
     <div className="drawer-body" data-status={data?.status}>
@@ -65,22 +77,21 @@ function Details({ id }: { id: string }) {
         </button>
       </header>
       {data ? (
-        <Facts transaction={data} />
+        <>
+          <Facts transaction={data} />
+          {error && (
+            <p className="drawer-error">
+              <span role="alert">Couldn't load the latest details.</span>
+              {retry}
+            </p>
+          )}
+        </>
       ) : missing ? (
         <p>There is no transaction with this ID. The link may be mistyped or out of date.</p>
       ) : error ? (
         <p className="drawer-error">
           <span role="alert">Couldn't load this transaction.</span>
-          <button
-            type="button"
-            disabled={isFetching}
-            onClick={() => {
-              heading.current?.focus()
-              void refetch()
-            }}
-          >
-            Retry
-          </button>
+          {retry}
         </p>
       ) : (
         <div className="skeleton drawer-skeleton" aria-hidden="true">

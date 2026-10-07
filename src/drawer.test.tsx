@@ -174,6 +174,27 @@ test('a failed detail request can be retried', async () => {
   })
 })
 
+test('a failed refresh keeps the details the list already had', async () => {
+  installApi()
+  document.cookie = 'faults=detail'
+  renderApp()
+  await waitForRows()
+  openFirstRow()
+  const failure = await within(drawer()).findByRole('alert')
+  expect(failure.textContent).toBe("Couldn't load the latest details.")
+  expect(drawerFor(first?.counterparty).textContent).toContain(
+    formatMoney(first?.amount ?? 0, first?.currency ?? 'EUR'),
+  )
+
+  document.cookie = 'faults=; max-age=0'
+  fireEvent.click(within(drawer()).getByRole('button', { name: 'Retry' }))
+  expect(document.activeElement).toBe(within(drawer()).getByRole('heading'))
+  await waitFor(() => {
+    expect(within(drawer()).queryByRole('alert')).toBeNull()
+  })
+  expect(drawerFor(first?.counterparty)).toBeDefined()
+})
+
 test.each<[Status, RegExp | null]>([
   ['PENDING', /not booked yet/i],
   ['REVERSED', /returned/i],

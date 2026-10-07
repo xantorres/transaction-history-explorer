@@ -75,12 +75,14 @@ export const transactionQuery = (id: string, client: QueryClient) =>
     queryKey: ['transaction', id],
     queryFn: ({ signal }) =>
       getJson(`/api/transactions/${encodeURIComponent(id)}`, signal) as Promise<Transaction>,
-    placeholderData: () =>
+    initialData: () =>
       client
         .getQueriesData<InfiniteData<Page>>({ queryKey: ['transactions'] })
         .flatMap(([, data]) => data?.pages ?? [])
         .flatMap((page) => page.items)
         .find((row) => row.id === id),
+    // The list's copy shows at once and stays if the fetch fails, but never counts as fresh.
+    initialDataUpdatedAt: 0,
   })
 
 export const createQueryClient = () =>
