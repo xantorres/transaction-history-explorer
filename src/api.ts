@@ -3,8 +3,8 @@ import {
   infiniteQueryOptions,
   keepPreviousData,
   queryOptions,
+  type InfiniteData,
 } from '@tanstack/react-query'
-import type { InfiniteData } from '@tanstack/react-query'
 import { nextDay, zonedDayStart } from './dates.ts'
 import type { ApiErrorBody, Page, Sort, Summary, Transaction } from './domain.ts'
 import type { View } from './url-state.ts'

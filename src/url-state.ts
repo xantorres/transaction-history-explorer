@@ -1,7 +1,15 @@
 import { useMemo, useSyncExternalStore } from 'react'
 import { canonicalZone, isIsoDate, viewerZone } from './dates.ts'
-import { CATEGORIES, CURRENCIES, SORTS, STATUSES } from './domain.ts'
-import type { Category, Currency, Sort, Status } from './domain.ts'
+import {
+  CATEGORIES,
+  CURRENCIES,
+  SORTS,
+  STATUSES,
+  type Category,
+  type Currency,
+  type Sort,
+  type Status,
+} from './domain.ts'
 import { DECIMAL } from './money.ts'
 
 const PARAMS = [

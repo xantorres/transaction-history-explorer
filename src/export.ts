@@ -1,5 +1,4 @@
-import { fetchPage } from './api.ts'
-import type { Filters } from './api.ts'
+import { fetchPage, type Filters } from './api.ts'
 import { CSV_HEADER, transactionCsvRow } from './csv.ts'
 import type { Sort } from './domain.ts'
 

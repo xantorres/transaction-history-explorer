@@ -1,5 +1,4 @@
-import { STATUS_LABELS } from '../domain.ts'
-import type { Status } from '../domain.ts'
+import { STATUS_LABELS, type Status } from '../domain.ts'
 
 export function StatusBadge({ status }: { status: Status }) {
   return (

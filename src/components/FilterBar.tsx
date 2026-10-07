@@ -1,10 +1,8 @@
-import { Fragment, useId, useState } from 'react'
-import type { ChangeEvent } from 'react'
+import { Fragment, useId, useState, type ChangeEvent } from 'react'
 import { viewerZone } from '../dates.ts'
 import { CATEGORIES, CURRENCIES, STATUS_LABELS, STATUSES } from '../domain.ts'
 import { DECIMAL } from '../money.ts'
-import { clearFilters, updateView, useClears } from '../url-state.ts'
-import type { View } from '../url-state.ts'
+import { clearFilters, updateView, useClears, type View } from '../url-state.ts'
 import { DebouncedInput } from './DebouncedInput.tsx'
 
 const LAST_DAY = '9999-12-31'

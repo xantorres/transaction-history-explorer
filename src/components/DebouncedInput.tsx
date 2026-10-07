@@ -1,5 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
-import type { InputHTMLAttributes } from 'react'
+import { useEffect, useId, useRef, useState, type InputHTMLAttributes } from 'react'
 
 const DEBOUNCE_MS = 300
 

@@ -17,6 +17,8 @@ export default defineConfig(globalIgnores(['dist']), {
     },
   },
   rules: {
+    'no-duplicate-imports': 'error',
+    '@typescript-eslint/no-import-type-side-effects': 'error',
     // Only matters under React Compiler, which this app does not use.
     'react-hooks/incompatible-library': 'off',
   },

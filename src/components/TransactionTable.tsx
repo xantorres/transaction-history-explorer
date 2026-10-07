@@ -5,7 +5,7 @@ import { transactionsQuery, type Filters } from '../api.ts'
 import { formatDateTime } from '../dates.ts'
 import type { Sort, Transaction } from '../domain.ts'
 import { formatMoney } from '../money.ts'
-import { clearFilters, encodeView, openTransaction, type View, updateView } from '../url-state.ts'
+import { clearFilters, encodeView, openTransaction, updateView, type View } from '../url-state.ts'
 import { StatusBadge } from './StatusBadge.tsx'
 
 export const ROW_HEIGHT = 44
