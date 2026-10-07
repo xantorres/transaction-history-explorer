@@ -15,6 +15,8 @@ const NOTES: Partial<Record<Status, string>> = {
 
 export function TransactionDrawer({ id }: { id?: string }) {
   const dialog = useRef<HTMLDialogElement>(null)
+  // A drag that starts or ends inside the drawer, like selecting its text, is not a backdrop click.
+  const onBackdrop = useRef(false)
 
   useEffect(() => {
     const element = dialog.current
@@ -31,8 +33,14 @@ export function TransactionDrawer({ id }: { id?: string }) {
         event.preventDefault()
         closeTransaction()
       }}
+      onPointerDown={(event) => {
+        onBackdrop.current = event.target === event.currentTarget
+      }}
+      onPointerUp={(event) => {
+        onBackdrop.current &&= event.target === event.currentTarget
+      }}
       onClick={(event) => {
-        if (event.target === event.currentTarget) closeTransaction()
+        if (onBackdrop.current && event.target === event.currentTarget) closeTransaction()
       }}
     >
       {id && <Details id={id} />}

@@ -13,6 +13,12 @@ const drawerFor = (counterparty = '') => screen.getByRole('dialog', { name: coun
 const openFirstRow = () => {
   fireEvent.click(within(rowAt(2) as HTMLElement).getByRole('link'))
 }
+const drag = (from: Element, to: Element) => {
+  fireEvent.pointerDown(from)
+  fireEvent.pointerUp(to)
+  // The click goes to the closest element both ends share.
+  fireEvent.click(drawer())
+}
 
 test.each([
   [
@@ -30,7 +36,7 @@ test.each([
   [
     'the backdrop',
     () => {
-      fireEvent.click(drawer())
+      drag(drawer(), drawer())
     },
   ],
 ])('%s closes a shared link in place', async (_, close) => {
@@ -46,6 +52,28 @@ test.each([
   expect(location.search).toBe('?currency=EUR')
   expect(history.length).toBe(entries)
   expect(screen.queryByRole('dialog')).toBeNull()
+})
+
+test.each([
+  [
+    'inside and ends on the backdrop',
+    (inside: Element) => {
+      drag(inside, drawer())
+    },
+  ],
+  [
+    'on the backdrop and ends inside',
+    (inside: Element) => {
+      drag(drawer(), inside)
+    },
+  ],
+])('a drag that starts %s keeps the drawer open', async (_, dragOver) => {
+  installApi()
+  const search = `?tx=${String(unloaded?.id)}`
+  renderApp(search)
+  dragOver(await within(drawer()).findByRole('heading', { name: unloaded?.counterparty }))
+  expect(location.search).toBe(search)
+  expect(screen.queryByRole('dialog')).not.toBeNull()
 })
 
 test('a row opens instantly from the list cache and Back closes it', async () => {
